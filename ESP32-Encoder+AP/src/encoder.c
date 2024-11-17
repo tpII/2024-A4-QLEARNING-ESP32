@@ -1,6 +1,7 @@
 #include "encoder.h"
 #include "driver/gpio.h"
-
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "esp_timer.h"  // Para obtener marca de tiempo en microsegundos
 
 // Variables globales para comparar pulsos
@@ -38,6 +39,20 @@ void encoder_isr_handler(void *arg) {
     last_trigger_time = now;
 
     encoder->last_pulse_time = now; // Registrar el tiempo del pulso
+}
+
+void tarea_verificar_variable(void *param) {
+    while (1) {
+        // Verifica el estado de la variable
+        int64_t now = esp_timer_get_time();
+        int64_t diferencia = (now - last_encoder_triggered) / 1000000;
+        if(diferencia >= 5){//5 seg
+            movement_direction = DIRECTION_STOPPED;
+        }
+        
+        // Espera 5 segundos
+        vTaskDelay(pdMS_TO_TICKS(5000));
+    }
 }
 
 

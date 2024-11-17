@@ -79,6 +79,7 @@ void http_post(const char *url, const char *post_data) {
     esp_http_client_cleanup(client);
 }
 
+
 // Configuración del main
 void app_main() {
     uart_set_baudrate(UART_NUM_0, 115200);
@@ -91,6 +92,12 @@ void app_main() {
     // Inicializar los encoders
     encoder_init(&encoder1, ENCODER1_OUT);
     encoder_init(&encoder2, ENCODER2_OUT);
+    xTaskCreate(tarea_verificar_variable,      // Función de la tarea
+                "VerificarVariableTask",       // Nombre de la tarea
+                2048,                          // Tamaño del stack
+                NULL,                          // Parámetro de entrada
+                1,                             // Prioridad
+                NULL);
     vTaskDelay(pdMS_TO_TICKS(5000));
 
     while (1) {

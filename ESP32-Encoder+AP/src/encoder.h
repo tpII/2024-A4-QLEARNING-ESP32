@@ -31,6 +31,7 @@ void encoder_init(encoder_t *encoder, int pin_out);
 int32_t encoder_get_count(encoder_t *encoder);
 void encoder_reset_count(encoder_t *encoder);
 void encoder_isr_handler(void *arg);
+void tarea_verificar_variable(void *param);
 
 
 #endif // ENCODER_H
