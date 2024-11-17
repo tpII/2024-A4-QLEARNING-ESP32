@@ -10,9 +10,6 @@
 #include "driver/uart.h"
 #include "esp_task_wdt.h"
 
-// Definir los pines de salida de los encoders
-#define ENCODER1_OUT 16
-#define ENCODER2_OUT 17
 
 // Configuración del AP
 #define AP_SSID "MiESP32_AP"
@@ -100,7 +97,11 @@ void app_main() {
         int32_t count2 = encoder_get_count(&encoder2);
         printf("Pulsos Encoder 1: %ld, Pulsos Encoder 2: %ld \n", count1, count2);
 
-        printf("Probando\n");
+        direction_t direccion=get_movement_direction();
+        if(direccion==0){printf("Detenido\n");}
+        else if(direccion==1){printf("Hacia adelante\n");}
+        else if(direccion==-1){printf("Hacia atras\n");};
+        
         // Enviar datos de ambos encoders mediante POST cada 5 segundos
         
         char post_data[100];

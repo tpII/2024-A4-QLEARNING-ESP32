@@ -1,11 +1,40 @@
 #include "encoder.h"
 #include "driver/gpio.h"
 
+#include "esp_timer.h"  // Para obtener marca de tiempo en microsegundos
+
+// Variables globales para comparar pulsos
+static volatile int64_t encoder1_last_time = 0;
+static volatile int64_t encoder2_last_time = 0;
+static volatile direction_t movement_direction = DIRECTION_STOPPED;
+
+
+
 // ISR: Incrementa el contador cada vez que se genera un pulso
 void encoder_isr_handler(void *arg) {
-    encoder_t *encoder = (encoder_t *)arg;  // Obtener la estructura del encoder
-    encoder->count++;  // Incrementar el contador por cada pulso detectado
+    encoder_t *encoder = (encoder_t *)arg;
+    int64_t now = esp_timer_get_time();  // Marca de tiempo en microsegundos
+    encoder->count++;  // Incrementar el contador de pulsos
+    encoder->last_pulse_time = now;
+
+    // Comparar tiempos para determinar la dirección
+    if (encoder->pin_out == ENCODER1_OUT) {  // Encoder 1
+        encoder1_last_time = now;
+        if (encoder1_last_time > encoder2_last_time) {
+            movement_direction = DIRECTION_FORWARD;
+        } else if (encoder1_last_time < encoder2_last_time) {
+            movement_direction = DIRECTION_BACKWARD;
+        }
+    } else if (encoder->pin_out == ENCODER2_OUT) {  // Encoder 2
+        encoder2_last_time = now;
+        if (encoder2_last_time > encoder1_last_time) {
+            movement_direction = DIRECTION_BACKWARD;
+        } else if (encoder2_last_time < encoder1_last_time) {
+            movement_direction = DIRECTION_FORWARD;
+        }
+    }
 }
+
 
 // Inicializa un encoder con su pin de salida (OUT)
 void encoder_init(encoder_t *encoder, int pin_out) {
@@ -37,3 +66,8 @@ int32_t encoder_get_count(encoder_t *encoder) {
 void encoder_reset_count(encoder_t *encoder) {
     encoder->count = 0;
 }
+
+direction_t get_movement_direction() {
+    return movement_direction;
+}
+
