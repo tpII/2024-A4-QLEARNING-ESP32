@@ -11,6 +11,7 @@
 #include "esp_task_wdt.h"
 
 
+
 // Configuración del AP
 #define AP_SSID "MiESP32_AP"
 #define AP_PASSWORD "123456789"
@@ -97,12 +98,14 @@ void app_main() {
         int32_t count2 = encoder_get_count(&encoder2);
         printf("Pulsos Encoder 1: %ld, Pulsos Encoder 2: %ld \n", count1, count2);
 
-        direction_t direccion=get_movement_direction();
-        if(direccion==0){printf("Detenido\n");}
-        else if(direccion==1){printf("Hacia adelante\n");}
-        else if(direccion==-1){printf("Hacia atras\n");};
-        
-        // Enviar datos de ambos encoders mediante POST cada 5 segundos
+        direction_t dir = get_movement_direction();
+        if (dir == DIRECTION_FORWARD) {
+            printf("Hacia adelante\n");
+        } else if (dir == DIRECTION_BACKWARD) {
+            printf("Hacia atrás\n");
+        } else {
+            printf("Detenido\n");
+        }
         
         char post_data[100];
         snprintf(post_data, sizeof(post_data), 

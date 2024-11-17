@@ -1,10 +1,6 @@
 #ifndef ENCODER_H
 #define ENCODER_H
 
-// Definir los pines de salida de los encoders
-#define ENCODER1_OUT 16
-#define ENCODER2_OUT 17
-
 #include <stdint.h>
 
 // Estructura para almacenar el estado del encoder
@@ -13,6 +9,12 @@ typedef struct {
     volatile int32_t count;    // Contador de pulsos
     volatile int64_t last_pulse_time;  // Marca de tiempo del último pulso
 } encoder_t;
+
+
+// Definir los pines de salida de los encoders
+#define ENCODER1_OUT 16
+#define ENCODER2_OUT 17
+
 
 // Nueva enumeración para la dirección
 typedef enum {

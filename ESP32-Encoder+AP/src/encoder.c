@@ -8,12 +8,9 @@ static volatile int64_t encoder1_last_time = 0;
 static volatile int64_t encoder2_last_time = 0;
 static volatile direction_t movement_direction = DIRECTION_STOPPED;
 
-//Variables para detectar movimiento
+
 static volatile int last_encoder_triggered = 0; // 1 para encoder1, 2 para encoder2
 static volatile int64_t last_trigger_time = 0; // Tiempo de la última interrupción
-
-
-
 // ISR: Incrementa el contador cada vez que se genera un pulso
 void encoder_isr_handler(void *arg) {
     encoder_t *encoder = (encoder_t *)arg;
@@ -24,13 +21,13 @@ void encoder_isr_handler(void *arg) {
 
     // Determinar el orden de las interrupciones
     if (encoder->pin_out == ENCODER1_OUT) {
-        if (last_encoder_triggered == 2 && (now - last_trigger_time) < 200000) { 
+        if (last_encoder_triggered == 2 && (now - last_trigger_time) < 500000) { 
             // Si el último fue el encoder 2 y la diferencia de tiempo es pequeña
             movement_direction = DIRECTION_FORWARD; 
         }
         last_encoder_triggered = 1;
     } else if (encoder->pin_out == ENCODER2_OUT) {
-        if (last_encoder_triggered == 1 && (now - last_trigger_time) < 200000) { 
+        if (last_encoder_triggered == 1 && (now - last_trigger_time) < 500000) { 
             // Si el último fue el encoder 1 y la diferencia de tiempo es pequeña
             movement_direction = DIRECTION_BACKWARD; 
         }
@@ -78,4 +75,3 @@ void encoder_reset_count(encoder_t *encoder) {
 direction_t get_movement_direction() {
     return movement_direction;
 }
-
