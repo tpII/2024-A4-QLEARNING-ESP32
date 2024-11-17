@@ -8,31 +8,39 @@ static volatile int64_t encoder1_last_time = 0;
 static volatile int64_t encoder2_last_time = 0;
 static volatile direction_t movement_direction = DIRECTION_STOPPED;
 
+//Variables para detectar movimiento
+static volatile int last_encoder_triggered = 0; // 1 para encoder1, 2 para encoder2
+static volatile int64_t last_trigger_time = 0; // Tiempo de la última interrupción
+
 
 
 // ISR: Incrementa el contador cada vez que se genera un pulso
 void encoder_isr_handler(void *arg) {
     encoder_t *encoder = (encoder_t *)arg;
     int64_t now = esp_timer_get_time();  // Marca de tiempo en microsegundos
-    encoder->count++;  // Incrementar el contador de pulsos
-    encoder->last_pulse_time = now;
 
-    // Comparar tiempos para determinar la dirección
-    if (encoder->pin_out == ENCODER1_OUT) {  // Encoder 1
-        encoder1_last_time = now;
-        if (encoder1_last_time > encoder2_last_time) {
-            movement_direction = DIRECTION_FORWARD;
-        } else if (encoder1_last_time < encoder2_last_time) {
-            movement_direction = DIRECTION_BACKWARD;
+    // Incrementar el contador del encoder correspondiente
+    encoder->count++;
+
+    // Determinar el orden de las interrupciones
+    if (encoder->pin_out == ENCODER1_OUT) {
+        if (last_encoder_triggered == 2 && (now - last_trigger_time) < 200000) { 
+            // Si el último fue el encoder 2 y la diferencia de tiempo es pequeña
+            movement_direction = DIRECTION_FORWARD; 
         }
-    } else if (encoder->pin_out == ENCODER2_OUT) {  // Encoder 2
-        encoder2_last_time = now;
-        if (encoder2_last_time > encoder1_last_time) {
-            movement_direction = DIRECTION_BACKWARD;
-        } else if (encoder2_last_time < encoder1_last_time) {
-            movement_direction = DIRECTION_FORWARD;
+        last_encoder_triggered = 1;
+    } else if (encoder->pin_out == ENCODER2_OUT) {
+        if (last_encoder_triggered == 1 && (now - last_trigger_time) < 200000) { 
+            // Si el último fue el encoder 1 y la diferencia de tiempo es pequeña
+            movement_direction = DIRECTION_BACKWARD; 
         }
+        last_encoder_triggered = 2;
     }
+
+    // Actualizar el tiempo del último pulso
+    last_trigger_time = now;
+
+    encoder->last_pulse_time = now; // Registrar el tiempo del pulso
 }
 
 
