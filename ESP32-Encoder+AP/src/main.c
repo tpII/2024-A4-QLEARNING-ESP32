@@ -8,10 +8,11 @@
 #include "nvs_flash.h"
 #include "esp_http_client.h"
 #include "driver/uart.h"
+#include "esp_task_wdt.h"
 
 // Definir los pines de salida de los encoders
-#define ENCODER1_OUT 06
-#define ENCODER2_OUT 07
+#define ENCODER1_OUT 16
+#define ENCODER2_OUT 17
 
 // Configuración del AP
 #define AP_SSID "MiESP32_AP"
@@ -86,22 +87,27 @@ void app_main() {
     nvs_flash_init();  // Inicializa NVS
     wifi_init_softap();  // Inicia AP
 
+    esp_task_wdt_deinit();  // Desactiva el watchdog para las tareas TESTEANDO
+
 
     // Inicializar los encoders
     encoder_init(&encoder1, ENCODER1_OUT);
     encoder_init(&encoder2, ENCODER2_OUT);
+    vTaskDelay(pdMS_TO_TICKS(5000));
 
     while (1) {
         int32_t count1 = encoder_get_count(&encoder1);
         int32_t count2 = encoder_get_count(&encoder2);
         printf("Pulsos Encoder 1: %ld, Pulsos Encoder 2: %ld \n", count1, count2);
 
+        printf("Probando\n");
         // Enviar datos de ambos encoders mediante POST cada 5 segundos
+        
         char post_data[100];
         snprintf(post_data, sizeof(post_data), 
                  "{\"encoder1\": %ld , \"encoder2\": %ld }", count1, count2);
         //http_post("http://192.168.4.2:8080/post", post_data);
-
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
