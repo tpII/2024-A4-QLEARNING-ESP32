@@ -79,6 +79,10 @@ void http_post(const char *url, const char *post_data) {
     esp_http_client_cleanup(client);
 }
 
+void enviarDatosMatriz(const char *data){
+    http_post("http://192.168.4.2:8080/recibir_dato", data);
+}
+
 
 // Configuración del main
 void app_main() {
@@ -117,8 +121,9 @@ void app_main() {
         char post_data[100];
         snprintf(post_data, sizeof(post_data), 
                  "{\"encoder1\": %ld , \"encoder2\": %ld }", count1, count2);
-        //http_post("http://192.168.4.2:8080/post", post_data);
-        
+        //9x9. Función para enviar datos al servidor
+        enviarDatosMatriz(post_data);
+        //
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }

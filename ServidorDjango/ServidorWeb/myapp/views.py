@@ -21,6 +21,8 @@ def recibir_dato(request):
             
             dato=data.get('dato')
             valor=data.get('valor')
+            print(dato)
+            printf(valor)
             print(data)
             nuevo_dato= datosCrawler(dato=dato, valor=valor)
             nuevo_dato.save()
