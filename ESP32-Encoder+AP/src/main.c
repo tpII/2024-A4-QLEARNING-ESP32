@@ -79,8 +79,32 @@ void http_post(const char *url, const char *post_data) {
     esp_http_client_cleanup(client);
 }
 
-void enviarDatosMatriz(const char *data){
-    http_post("http://192.168.4.2:8080/recibir_dato", data);
+void enviarDatosMatriz(int matriz[9][9]) {
+    char buffer[1024]; // Buffer para el string JSON
+    int offset = 0;    // Offset para ir escribiendo en el buffer
+
+    offset += snprintf(buffer + offset, sizeof(buffer) - offset, "{ \"matriz\": [");
+
+    for (int i = 0; i < 9; i++) {
+        offset += snprintf(buffer + offset, sizeof(buffer) - offset, "[");
+        for (int j = 0; j < 9; j++) {
+            offset += snprintf(buffer + offset, sizeof(buffer) - offset, "%d", matriz[i][j]);
+            if (j < 8) {
+                offset += snprintf(buffer + offset, sizeof(buffer) - offset, ",");
+            }
+        }
+        offset += snprintf(buffer + offset, sizeof(buffer) - offset, "]");
+        if (i < 8) {
+            offset += snprintf(buffer + offset, sizeof(buffer) - offset, ",");
+        }
+    }
+
+    snprintf(buffer + offset, sizeof(buffer) - offset, "]}");
+
+    printf("Datos JSON generados: %s\n", buffer);
+
+    // Llamar a http_post con el JSON generado
+    http_post("http://192.168.4.2:8080/recibir_dato", buffer);
 }
 
 
