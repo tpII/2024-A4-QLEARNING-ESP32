@@ -56,24 +56,23 @@ void tarea_verificar_variable(void *param) {
 }
 
 
-// Inicializa un encoder con su pin de salida (OUT)
 void encoder_init(encoder_t *encoder, int pin_out) {
     encoder->pin_out = pin_out;
     encoder->count = 0;
 
-    // Configurar el pin como entrada con interrupción en cualquier cambio de estado
     gpio_config_t io_conf = {
-        .intr_type = GPIO_INTR_POSEDGE,  // Interrupción en flanco de subida
-        .mode = GPIO_MODE_INPUT,
+        .intr_type = GPIO_INTR_NEGEDGE,  // Flanco de bajada
+        .mode = GPIO_MODE_INPUT,        // Configurar como entrada
         .pin_bit_mask = (1ULL << pin_out),
-        .pull_up_en = GPIO_PULLUP_ENABLE,
+        .pull_up_en = GPIO_PULLUP_ENABLE, // Habilitar resistencia pull-up
+        .pull_down_en = GPIO_PULLDOWN_DISABLE // Deshabilitar pull-down
     };
     gpio_config(&io_conf);
 
-    // Instalar el servicio de interrupciones (una sola vez)
-    gpio_install_isr_service(0);
+    // Instalar servicio de interrupciones si no está instalado
+    gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
 
-    // Añadir la interrupción para el pin de salida del encoder
+    // Agregar el controlador de interrupciones
     gpio_isr_handler_add(pin_out, encoder_isr_handler, (void *)encoder);
 }
 
