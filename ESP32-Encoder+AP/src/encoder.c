@@ -16,10 +16,8 @@ static volatile int64_t last_trigger_time = 0; // Tiempo de la última interrupc
 void encoder_isr_handler(void *arg) {
     encoder_t *encoder = (encoder_t *)arg;
     int64_t now = esp_timer_get_time();  // Marca de tiempo en microsegundos
-
     // Incrementar el contador del encoder correspondiente
     encoder->count++;
-
     // Determinar el orden de las interrupciones
     if (encoder->pin_out == ENCODER1_OUT) {
         if (last_encoder_triggered == 2 && (now - last_trigger_time) < 500000) { 
@@ -34,24 +32,26 @@ void encoder_isr_handler(void *arg) {
         }
         last_encoder_triggered = 2;
     }
-
     // Actualizar el tiempo del último pulso
     last_trigger_time = now;
-
     encoder->last_pulse_time = now; // Registrar el tiempo del pulso
 }
 
 void tarea_verificar_variable(void *param) {
+    encoders_params_t *encoders = (encoders_params_t *)param;
     while (1) {
-        // Verifica el estado de la variable
+        int32_t count1 = encoder_get_count(encoders->encoder1);
+        int32_t count2 = encoder_get_count(encoders->encoder2);
+        //printf("Verificando encoders: Encoder1 = %ld, Encoder2 = %ld\n", count1, count2);
         int64_t now = esp_timer_get_time();
         int64_t diferencia = (now - last_encoder_triggered) / 1000000;
-        if(diferencia >= 5){//5 seg
+        if (diferencia >= 5) {  // 5 segundos
             movement_direction = DIRECTION_STOPPED;
+            encoder_reset_count(encoders->encoder1);
+            encoder_reset_count(encoders->encoder2);
         }
-        
         // Espera 5 segundos
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        vTaskDelay(pdMS_TO_TICKS(10000));
     }
 }
 
@@ -88,4 +88,23 @@ void encoder_reset_count(encoder_t *encoder) {
 
 direction_t get_movement_direction() {
     return movement_direction;
+}
+
+float encoder_get_reward(encoder_t *encoder){
+    int32_t real_value= (encoder->count)/2;
+    float reward = real_value >= 5 ? 1.0 : (float)real_value / 5.0; //Acotado a 5 como max (rendijas de una vuelta)
+    return reward;
+}
+
+float get_reward(encoder_t *encoder1, encoder_t *encoder2){
+    printf("Obteniendo recompensas...\n");
+    float reward_encoder1=encoder_get_reward(encoder1);
+    printf("Recompensa encoder1: %f \n",reward_encoder1);
+    float reward_encoder2=encoder_get_reward(encoder2);
+    printf("Recompensa encoder2: %f \n",reward_encoder2);
+    float reward_final= (reward_encoder1 + reward_encoder2)/2;
+    printf("Recompensa total: %f \n",reward_final);
+    encoder_reset_count(encoder1);
+    encoder_reset_count(encoder2);
+    return reward_final;
 }
