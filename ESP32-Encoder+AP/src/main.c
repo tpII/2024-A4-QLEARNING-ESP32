@@ -168,8 +168,10 @@ void app_main() {
         //Obtiene recompensa encoders
         printf("Reward: %f\n", get_reward(&encoder1,&encoder2));
 
-        enviarDatosMatriz(matriz);
+        
         //
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
+    enviarDatosMatriz(matriz);
+    return;
 }

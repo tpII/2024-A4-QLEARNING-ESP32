@@ -51,7 +51,7 @@ void tarea_verificar_variable(void *param) {
             encoder_reset_count(encoders->encoder2);
         }
         // Espera 5 segundos
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        vTaskDelay(pdMS_TO_TICKS(8000));
     }
 }
 
