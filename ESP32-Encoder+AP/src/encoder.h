@@ -28,7 +28,7 @@ typedef struct {
     encoder_t *encoder2;
 } encoders_params_t;
 
-// Prototipo adicional
+// Prototipo adicional 
 direction_t get_movement_direction();
 
 // Prototipos de funciones

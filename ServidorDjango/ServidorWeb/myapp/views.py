@@ -47,6 +47,7 @@ def start_button(request):
     if request.method == 'POST':
         start = True
         return JsonResponse({'status': 'success', 'message': 'Start activated', 'start': start})
+    print(start)
     return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=405)
 
 # Vista para manejar el botón Stop
@@ -56,9 +57,15 @@ def stop_button(request):
     if request.method == 'POST':
         start = False
         return JsonResponse({'status': 'success', 'message': 'Stop activated', 'start': start})
+    print(start)
     return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=405)
 
 # Método GET para consultar el estado de "start"
 def get_start_state(request):
     global start
-    return JsonResponse({'start': start})
+    print("Estado del crawler")
+    print(start)
+    response = JsonResponse({'start': start})
+
+    print(response.content.decode('utf-8'))
+    return response
