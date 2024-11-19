@@ -7,6 +7,11 @@ from django.core.cache import cache
 # Create your views here.
 #Lo que se envía al cliente
 
+
+# Variable global para el estado
+start = False  # Inicialmente apagado
+
+
 matriz = [[0 for _ in range(9)] for _ in range(9)]  # Matriz 9x9 llena de ceros
 
 def mostrar_matriz(request):
@@ -34,3 +39,26 @@ def recibir_dato(request):
             return JsonResponse({'status': 'error', 'mensaje': 'JSON inválido'}, status=400)
     else:
         return JsonResponse({'status': 'error', 'mensaje': 'Solo acepta POST requests'}, status=405)
+
+# Vista para manejar el botón Start
+@csrf_exempt
+def start_button(request):
+    global start
+    if request.method == 'POST':
+        start = True
+        return JsonResponse({'status': 'success', 'message': 'Start activated', 'start': start})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=405)
+
+# Vista para manejar el botón Stop
+@csrf_exempt
+def stop_button(request):
+    global start
+    if request.method == 'POST':
+        start = False
+        return JsonResponse({'status': 'success', 'message': 'Stop activated', 'start': start})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=405)
+
+# Método GET para consultar el estado de "start"
+def get_start_state(request):
+    global start
+    return JsonResponse({'start': start})

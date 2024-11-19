@@ -14,6 +14,15 @@
             padding: 10px;
             text-align: center;
         }
+        .buttons {
+            text-align: center;
+            margin: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 10px;
+        }
     </style>
 </head>
 <body>
@@ -31,5 +40,16 @@
     {% else %}
         <p>No se ha recibido ninguna matriz aún.</p>
     {% endif %}
+
+    <div class="buttons">
+        <form action="/start/" method="post">
+            {% csrf_token %}
+            <button type="submit">Start</button>
+        </form>
+        <form action="/stop/" method="post">
+            {% csrf_token %}
+            <button type="submit">Stop</button>
+        </form>
+    </div>
 </body>
 </html>
