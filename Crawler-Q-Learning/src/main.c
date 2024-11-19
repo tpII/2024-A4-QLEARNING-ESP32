@@ -12,6 +12,7 @@
 
 typedef struct {
     float Q[ROW_NUM][ACT_NUM]; // tabla Q
+    float R[ROW_NUM][ACT_NUM]; // tabla R (recompensas)
     float epsilon; // tasa de exploración
     float alpha; // tasa de aprendizaje
     float gamma; // factor de descuento
@@ -73,6 +74,7 @@ void q_agent_init(Q_Agent *agent) {
     for (int s = 0; s < ROW_NUM; s++) {
         for (int a = 0; a < ACT_NUM; a++) {
             agent->Q[s][a] = 0;  // inicializa la tabla Q en ceros
+            agent->R[s][a] = 0;  // Inicializa la matriz R en ceros
         }
     }
     agent->epsilon = 0.1; // exploración
@@ -129,8 +131,9 @@ void mover_servos(int servo1_position, int servo2_position) {
 int encoder_signal() {
     // Simula la señal del encoder, retornando un valor de recompensa
     // Aquí debería ir el código para leer la señal del encoder capturando interrupciones
-    printf("¡Interrupción del encoder! La rueda se movió.\n");
-    return rand() % 2; // Retorna 0 o 1 como recompensa
+    // printf("¡Interrupción del encoder! La rueda se movió.\n");
+    // return rand() % 2; // Retorna 0 o 1 como recompensa
+    
 }
 
 void mover_servos_continuamente(int servo1_initial_position, int servo2_initial_position) {
