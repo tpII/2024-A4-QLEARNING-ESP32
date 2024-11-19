@@ -6,11 +6,35 @@
 #include "esp_system.h"
 #include "servo.c"
 
+//---------CORRECCIONES FUTURAS----------
+/*
+-establecer estados para no tener que hacer
+    int next_state = (servo1_new_position / 45) + (servo2_new_position / 45) * 3;
+*/
+
+
 #define SERVO_NUM 2 // Dos servos
 #define ROW_NUM 9 // 9 estados (3 posiciones para servo1 y 3 para servo2)
-#define ACT_NUM 5 // 5 acciones por cada servo: adelante, atrás, sin movimiento, y dos más si se definen
+#define ACT_NUM 3 // 5 acciones por cada servo: adelante, atrás, sin movimiento, y dos más si se definen
 #define MAX_POSITION 90 // máxima posición (grados)
 #define MIN_POSITION 0 
+
+//estan al cuete por ahora
+#define ACTION_SERVO1_FORWARD 0  // Mover servo hacia adelante
+#define ACTION_SERVO2_FORWARD 1  // Mover servo hacia atras
+#define ACTION_SERVO1_BACKWARD 2 // no move
+
+// // Desplazamiento para cada servo por acción
+// const int action_displacements[SERVO_NUM][ACT_NUM] = {
+//     { 45,  0, -45,  0,  0 }, // Efecto en Servo 1
+//     {  0, 45,   0, -45,  0 }  // Efecto en Servo 2
+// };
+
+// Desplazamiento para cada servo por acción
+const int action_displacements[ACT_NUM] = {
+    { 45, -45,  0 } // Efecto en Servo
+};
+
 
 typedef struct {
     float Q[SERVO_NUM][ROW_NUM][ACT_NUM]; // matriz Q tridimensional
@@ -46,27 +70,32 @@ void app_main() {
         int servo1_action = q_agent_select_action(&agent, 0, current_state);
         int servo2_action = q_agent_select_action(&agent, 1, current_state);
 
-        // Calcular nuevas posiciones basadas en las acciones seleccionadas
-        int servo1_new_position = servo1_position + (servo1_action == 0 ? 45 : (servo1_action == 1 ? -45 : 0));
-        int servo2_new_position = servo2_position + (servo2_action == 0 ? 45 : (servo2_action == 1 ? -45 : 0));
+        int servo1_new_position = servo1_position + action_displacements[servo1_action];
+        int servo2_new_position = servo2_position + action_displacements[servo2_action];
 
         // Restringir posiciones a los límites
-        servo1_new_position = servo1_new_position > MAX_POSITION ? MAX_POSITION : (servo1_new_position < MIN_POSITION ? MIN_POSITION : servo1_new_position);
-        servo2_new_position = servo2_new_position > MAX_POSITION ? MAX_POSITION : (servo2_new_position < MIN_POSITION ? MIN_POSITION : servo2_new_position);
+        servo1_new_position = servo1_new_position > MAX_POSITION ? MAX_POSITION :
+                            (servo1_new_position < MIN_POSITION ? MIN_POSITION : servo1_new_position);
+
+        servo2_new_position = servo2_new_position > MAX_POSITION ? MAX_POSITION :
+                            (servo2_new_position < MIN_POSITION ? MIN_POSITION : servo2_new_position);
+
 
         // Calcular nuevo estado
         int next_state = (servo1_new_position / 45) + (servo2_new_position / 45) * 3;
 
         // Simular recompensas del encoder
-        int reward1 = encoder_signal();
-        int reward2 = encoder_signal();
+        // int reward1 = encoder_signal();
+        // int reward2 = encoder_signal();
 
         // Mover los servos
-        mover_servos(servo1_new_position, servo2_new_position);
-
+        // mover_servos(servo1_new_position, servo2_new_position);
+        process_move_shoulder(servo1_new_position);
+        process_move_elbow(servo2_new_position);
+        
         // Actualizar las matrices Q para ambos servos
-        q_agent_update(&agent, 0, current_state, servo1_action, reward1, next_state);
-        q_agent_update(&agent, 1, current_state, servo2_action, reward2, next_state);
+        q_agent_update(&agent, 0, current_state, servo1_action, next_state);
+        q_agent_update(&agent, 1, current_state, servo2_action, next_state);
 
         // Actualizar estado y posiciones
         current_state = next_state;
@@ -115,16 +144,32 @@ int q_agent_select_action(Q_Agent *agent, int servo, int state) {
     }
 }
 
-void q_agent_update(Q_Agent *agent, int servo, int state, int action, int reward, int next_state) {
+// void q_agent_update(Q_Agent *agent, int servo, int state, int action, int reward, int next_state) {
+//     float old_q = agent->Q[servo][state][action];
+//     float max_q_next = agent->Q[servo][next_state][0];
+
+//     for (int a = 1; a < ACT_NUM; a++) {
+//         if (agent->Q[servo][next_state][a] > max_q_next) {
+//             max_q_next = agent->Q[servo][next_state][a];
+//         }
+//     }
+//     // Actualización de Q
+//     agent->Q[servo][state][action] = old_q + agent->alpha * (reward + agent->gamma * max_q_next - old_q);
+// }
+
+void q_agent_update(Q_Agent *agent, int servo, int state, int action, int next_state) {
     float old_q = agent->Q[servo][state][action];
     float max_q_next = agent->Q[servo][next_state][0];
 
+    // Buscar el valor Q máximo en el próximo estado
     for (int a = 1; a < ACT_NUM; a++) {
         if (agent->Q[servo][next_state][a] > max_q_next) {
             max_q_next = agent->Q[servo][next_state][a];
         }
     }
-    // Actualización de Q
+    // Usar la recompensa desde la matriz R
+    float reward = agent->R[servo][state][action];
+    // Actualizar la tabla Q
     agent->Q[servo][state][action] = old_q + agent->alpha * (reward + agent->gamma * max_q_next - old_q);
 }
 
@@ -146,10 +191,22 @@ void mover_servos(int servo1_position, int servo2_position) {
     printf("Servo 1: %d grados, Servo 2: %d grados\n", servo1_position, servo2_position);
 }
 
-int encoder_signal() {
-    // Simula una recompensa aleatoria
-    return rand() % 2; // Retorna 0 o 1
+// int encoder_signal() {
+//     // Simula una recompensa aleatoria
+//     return rand() % 2; // Retorna 0 o 1
+// }
+
+void encoder_signal(Q_Agent *agent, int servo, int state, int action, encoder_t *encoder1, encoder_t *encoder2) {
+    // Leer el valor de recompensa desde los encoders
+    float reward = get_reward(&encoder1,&encoder2);
+    // Actualizar la matriz R con la recompensa obtenida
+    //preguntar a lucho si va com ampersand
+    agent->R[servo][state][action] = reward;
+
+    printf("Actualizada recompensa en R[%d][%d][%d]: %.2f\n", servo, state, action, reward);
 }
+
+
 
 void mover_servos_continuamente(int servo1_initial_position, int servo2_initial_position) {
     while (1) {

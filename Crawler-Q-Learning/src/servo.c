@@ -1,4 +1,3 @@
-#include "servo.h"
 
 // Variables globales
 static int current_pos[2] = {0, 0}; // [hombro, codo]
@@ -69,7 +68,7 @@ void init_servo() {
 }
 
 // Función para procesar la entrada del teclado
-void process_keypad(int servo1_position, int servo2_position) {
+void process_keypad(char key) {
     switch (key) {
         case '8': // Arriba
             current_pos[0] += SERVO_STEP_ANGLE;
