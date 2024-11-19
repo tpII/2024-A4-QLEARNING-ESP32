@@ -19,6 +19,7 @@
 
 encoder_t encoder1, encoder2;  // Instancias de los dos encoders
 
+
 // Configura el modo AP del ESP32
 void wifi_init_softap() {
     esp_netif_init();
@@ -52,7 +53,7 @@ void wifi_init_softap() {
 // Maneja eventos HTTP
 esp_err_t http_event_handler(esp_http_client_event_t *evt) {
     if (evt->event_id == HTTP_EVENT_ERROR) {
-        printf("Error en la solicitud HTTP\n");
+        //printf("Error en la solicitud HTTP\n");
     }
     return ESP_OK;
 }
@@ -73,7 +74,7 @@ void http_post(const char *url, const char *post_data) {
         printf("POST enviado con éxito, código de respuesta: %d\n", 
                esp_http_client_get_status_code(client));
     } else {
-        printf("Error en el POST: %s\n", esp_err_to_name(err));
+        //printf("Error en el POST: %s\n", esp_err_to_name(err));
     }
 
     esp_http_client_cleanup(client);
@@ -101,10 +102,10 @@ void enviarDatosMatriz(int matriz[9][9]) {
 
     snprintf(buffer + offset, sizeof(buffer) - offset, "]}");
 
-    printf("Datos JSON generados: %s\n", buffer);
+    //printf("Datos JSON generados: %s\n", buffer);
 
     // Llamar a http_post con el JSON generado
-    http_post("http://192.168.4.2:8080/recibir_dato", buffer);
+    http_post("http://192.168.4.2:8000/api/recibir_dato/", buffer);
 }
 
 
@@ -120,10 +121,14 @@ void app_main() {
     // Inicializar los encoders
     encoder_init(&encoder1, ENCODER1_OUT);
     encoder_init(&encoder2, ENCODER2_OUT);
+    encoders_params_t encoders = {
+        .encoder1 = &encoder1,
+        .encoder2 = &encoder2,
+    };
     xTaskCreate(tarea_verificar_variable,      // Función de la tarea
                 "VerificarVariableTask",       // Nombre de la tarea
                 2048,                          // Tamaño del stack
-                NULL,                          // Parámetro de entrada
+                (void *)&encoders,             // Parámetro de entrada
                 1,                             // Prioridad
                 NULL);
     vTaskDelay(pdMS_TO_TICKS(5000));
@@ -160,6 +165,9 @@ void app_main() {
                  "{\"encoder1\": %ld , \"encoder2\": %ld }", count1, count2);
         //9x9. Función para enviar datos al servidor
         
+        //Obtiene recompensa encoders
+        printf("Reward: %f\n", get_reward(&encoder1,&encoder2));
+
         enviarDatosMatriz(matriz);
         //
         vTaskDelay(pdMS_TO_TICKS(1000));

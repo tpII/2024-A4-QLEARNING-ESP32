@@ -22,6 +22,11 @@ typedef enum {
     DIRECTION_FORWARD = 1,     // Movimiento hacia adelante
     DIRECTION_BACKWARD = -1    // Movimiento hacia atrás
 } direction_t;
+//Estructura para enviar a la task
+typedef struct {
+    encoder_t *encoder1;
+    encoder_t *encoder2;
+} encoders_params_t;
 
 // Prototipo adicional
 direction_t get_movement_direction();
@@ -32,6 +37,8 @@ int32_t encoder_get_count(encoder_t *encoder);
 void encoder_reset_count(encoder_t *encoder);
 void encoder_isr_handler(void *arg);
 void tarea_verificar_variable(void *param);
+float encoder_get_reward(encoder_t *encoder);
+float get_reward(encoder_t *encoder1, encoder_t *encoder2);
 
 
 #endif // ENCODER_H

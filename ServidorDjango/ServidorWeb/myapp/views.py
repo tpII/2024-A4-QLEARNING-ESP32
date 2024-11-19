@@ -22,10 +22,10 @@ def recibir_dato(request):
             dato=data.get('dato')
             valor=data.get('valor')
             print(dato)
-            printf(valor)
+            print(valor)
             print(data)
             nuevo_dato= datosCrawler(dato=dato, valor=valor)
-            nuevo_dato.save()
+            #nuevo_dato.save()
             response_data={
                 'id':nuevo_dato.id,
                 'dato':nuevo_dato.valor,
