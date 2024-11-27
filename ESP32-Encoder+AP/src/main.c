@@ -276,6 +276,7 @@ void enviarDatosMatriz(int matriz[9][9]) {
     http_post("http://192.168.4.2:8000/api/recibir_dato/", buffer);
 }
 
+//AGREGAR CODIGO -------------------------------------------------
 int obtenerEstadoCrawler(){
     printf("Solicitando estado de la variable start...\n");
     int estado=http_get("http://192.168.4.2:8000/get_start_state/"); //0 - Detener ...... 1 - Empezar
