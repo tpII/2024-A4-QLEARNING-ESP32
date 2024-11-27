@@ -13,6 +13,7 @@
 #include "esp_http_client.h"
 #include "driver/uart.h"
 #include "esp_task_wdt.h"
+#include "cJSON.h"
 
 
 //---------CORRECCIONES FUTURAS----------
@@ -40,6 +41,12 @@
 #define AP_SSID "MiESP32_AP"
 #define AP_PASSWORD "123456789"
 #define MAX_STA_CONN 4
+
+//Variables para respuesta del server y control del estado
+char *response_data = NULL;
+size_t response_data_size = 0;
+int estadoCrawler=-1; //-1 Detenido, 1 Empezado(haciendo algo)
+int estadoAprendiendoEjecutando=-1; //-1 Detenido, 0 Aprendiendo, 1 Ejecutando
 
 encoder_t encoder1, encoder2;  // Instancias de los dos encoders
 
@@ -73,6 +80,123 @@ void wifi_init_softap() {
 
     printf("Punto de acceso inicializado: SSID:%s\n", AP_SSID);
 }
+
+//Parsea respuesta del GET y almacena en variable
+int process_get_response(const char *response) {
+    // Parsear el JSON
+    cJSON *json = cJSON_Parse(response);
+    if (json == NULL) {
+        printf("Error al parsear la respuesta JSON\n");
+        return 0;
+    }
+    int respuesta=0;
+
+    // Extraer el valor de "start"
+    cJSON *start_item = cJSON_GetObjectItem(json, "start");
+    if (cJSON_IsBool(start_item)) {
+        bool start = cJSON_IsTrue(start_item);
+        printf("Estado de start: %s\n", start ? "true" : "false");
+        if(start){
+            respuesta=1;
+        }
+    } else {
+        printf("No se encontró el campo 'start' o no es un booleano\n");
+    }
+
+    // Liberar la memoria del objeto JSON
+    cJSON_Delete(json);
+    return respuesta;
+}
+
+// Método HTTP GET mejorado
+// Método HTTP GET con soporte JSON
+esp_err_t client_event_get_handler(esp_http_client_event_handle_t evt)
+{
+    switch (evt->event_id)
+    {
+    case HTTP_EVENT_ON_DATA:
+        printf("HTTP_EVENT_ON_DATA, longitud de datos: %d\n", evt->data_len);
+        // Redimensionar el buffer para almacenar los nuevos datos
+        response_data = realloc(response_data, response_data_size + evt->data_len + 1); // +1 para el terminador nulo
+        if (response_data == NULL)
+        {
+            printf("Error al redimensionar el buffer de respuesta.\n");
+            return ESP_FAIL;
+        }
+
+        // Copiar los nuevos datos al buffer
+        memcpy(response_data + response_data_size, evt->data, evt->data_len);
+        response_data_size += evt->data_len;
+        response_data[response_data_size] = '\0'; // Asegurarse de que sea una cadena terminada en nulo
+        break;
+
+    default:
+        break;
+    }
+    return ESP_OK;
+}
+int http_get(const char *url)
+{
+    esp_http_client_config_t config = {
+        .url = url,
+        .event_handler = client_event_get_handler, // Usar el manejador de eventos
+    };
+
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    int estado = estadoCrawler; // Por defecto, asumimos error
+
+    // Realizar la solicitud HTTP GET
+    esp_err_t err = esp_http_client_perform(client);
+    if (err == ESP_OK)
+    {
+        int status_code = esp_http_client_get_status_code(client);
+        printf("GET exitoso, código de respuesta: %d\n", status_code);
+
+        if (response_data != NULL)
+        {
+            printf("Respuesta completa del servidor: %s\n", response_data);
+
+            // Analizar el contenido JSON usando cJSON
+            cJSON *json_response = cJSON_Parse(response_data);
+            if (json_response == NULL)
+            {
+                printf("Error al analizar JSON.\n");
+            }
+            else
+            {
+                // Extraer valor del campo "start"
+                cJSON *start = cJSON_GetObjectItemCaseSensitive(json_response, "start");
+                if (cJSON_IsBool(start))
+                {
+                    estado = cJSON_IsTrue(start) ? 1 : -1; // 1 si es `true`, 0 si es `false`
+                    printf("Valor de 'start': %s\n", estado ? "true" : "false");
+                }
+                else
+                {
+                    printf("El campo 'start' no es booleano o no existe.\n");
+                }
+                cJSON_Delete(json_response); // Libera la memoria del objeto JSON
+            }
+
+            free(response_data); // Libera el buffer de respuesta
+            response_data = NULL;
+            response_data_size = 0;
+        }
+        else
+        {
+            printf("No se recibió respuesta del servidor.\n");
+        }
+    }
+    else
+    {
+        printf("Error en el GET: %s\n", esp_err_to_name(err));
+    }
+
+    esp_http_client_cleanup(client);
+    return estado;
+}
+
+
 
 // Maneja eventos HTTP
 esp_err_t http_event_handler(esp_http_client_event_t *evt) {
@@ -130,6 +254,24 @@ void enviarDatosMatriz(int matriz[9][9]) {
 
     // Llamar a http_post con el JSON generado
     http_post("http://192.168.4.2:8000/api/recibir_dato/", buffer);
+}
+
+int obtenerEstadoCrawler(){
+    printf("Solicitando estado de la variable start...\n");
+    int estado=http_get("http://192.168.4.2:8000/get_start_state/"); //0 - Detener ...... 1 - Empezar
+    return estado;
+}
+
+void enviarEstadoCrawler(){
+    char buffer[128];
+    int length = snprintf(buffer, sizeof(buffer), "{ \"estado\": %d }", estadoAprendiendoEjecutando);
+    if (length < 0 || length >= sizeof(buffer)) {
+        printf("Error al generar el JSON.\n");
+        return;
+    }
+    // Imprimir el JSON
+    printf("JSON generado:\n%s\n", buffer);
+    http_post("http://192.168.4.2:8000/api/recibir_estado/", buffer);
 }
 
 
