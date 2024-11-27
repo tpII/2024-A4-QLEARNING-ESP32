@@ -8,5 +8,7 @@ urlpatterns=[
     path('start/', views.start_button, name='start_button'),
     path('stop/', views.stop_button, name='stop_button'),
     path('get_start_state/', views.get_start_state, name='get_start_state'),
+    path('api/recibir_estado/',views.recibir_estado, name='recibir_estado'),
+    path('api/get_estado_crawler/',views.get_estado_crawler, name='get_estado_crawler'),
 ]
     

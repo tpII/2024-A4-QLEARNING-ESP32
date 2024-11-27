@@ -10,7 +10,13 @@
 #include "driver/uart.h"
 #include "esp_task_wdt.h"
 #include "cJSON.h" // Librería para procesar JSON (incluida en ESP-IDF)
+#define TAG "HTTP_GET"
 
+//AGREGAR A CODIGO FINAL ------------------------------------------------------------
+char *response_data = NULL;
+size_t response_data_size = 0;
+int estadoCrawler=-1; //-1 Detenido, 1 Empezado(haciendo algo)
+int estadoAprendiendoEjecutando=-1; //-1 Detenido, 0 Aprendiendo, 1 Ejecutando
 
 
 // Configuración del AP
@@ -82,6 +88,7 @@ void http_post(const char *url, const char *post_data) {
 }
 
 // Función para manejar la respuesta del GET
+//NUEVO HTTP, AGREGAR A CODIGO FINAL -------------------------------------------------------------------
 int process_get_response(const char *response) {
     // Parsear el JSON
     cJSON *json = cJSON_Parse(response);
@@ -108,7 +115,8 @@ int process_get_response(const char *response) {
     return respuesta;
 }
 
-// Método HTTP GET
+// Método HTTP GET -- LO ESTOY CAMBIANDO
+/*
 int http_get(const char *url) {
     esp_http_client_config_t config = {
         .url = url,
@@ -120,10 +128,20 @@ int http_get(const char *url) {
     if (err == ESP_OK) {
         printf("GET exitoso, código de respuesta: %d\n", esp_http_client_get_status_code(client));
 
+        //DEBUGEANDO
         // Lee el cuerpo de la respuesta
         char response_buffer[256];
         int content_length = esp_http_client_read(client, response_buffer, sizeof(response_buffer) - 1);
-        printf("Content length: %d",content_length);
+        printf("Content length: %d \n",content_length);
+        char *content_type = NULL; // Variable para almacenar el valor del encabezado
+        esp_err_t ret = esp_http_client_get_header(client, "Content-Type", &content_type);
+        if (ret == ESP_OK && content_type != NULL) {
+            printf("Content-Type: %s\n", content_type);
+        } else {
+            printf("No se pudo obtener Content-Type o no está presente.\n");
+        }
+
+        printf("Responde Buffer: %s \n", response_buffer);
         if (content_length > 0) {
             response_buffer[content_length] = '\0'; // Termina el string
             printf("Respuesta del servidor: %s\n", response_buffer);
@@ -138,7 +156,97 @@ int http_get(const char *url) {
     esp_http_client_cleanup(client);
     return estado;
 }
+*/
 
+
+//NUEVO HTTP, AGREGAR A CODIGO FINAL -------------------------------------------------------------------
+// Método HTTP GET mejorado
+// Método HTTP GET con soporte JSON
+esp_err_t client_event_get_handler(esp_http_client_event_handle_t evt)
+{
+    switch (evt->event_id)
+    {
+    case HTTP_EVENT_ON_DATA:
+        printf("HTTP_EVENT_ON_DATA, longitud de datos: %d\n", evt->data_len);
+        // Redimensionar el buffer para almacenar los nuevos datos
+        response_data = realloc(response_data, response_data_size + evt->data_len + 1); // +1 para el terminador nulo
+        if (response_data == NULL)
+        {
+            printf("Error al redimensionar el buffer de respuesta.\n");
+            return ESP_FAIL;
+        }
+
+        // Copiar los nuevos datos al buffer
+        memcpy(response_data + response_data_size, evt->data, evt->data_len);
+        response_data_size += evt->data_len;
+        response_data[response_data_size] = '\0'; // Asegurarse de que sea una cadena terminada en nulo
+        break;
+
+    default:
+        break;
+    }
+    return ESP_OK;
+}
+int http_get(const char *url)
+{
+    esp_http_client_config_t config = {
+        .url = url,
+        .event_handler = client_event_get_handler, // Usar el manejador de eventos
+    };
+
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    int estado = estadoCrawler; // Por defecto, asumimos error
+
+    // Realizar la solicitud HTTP GET
+    esp_err_t err = esp_http_client_perform(client);
+    if (err == ESP_OK)
+    {
+        int status_code = esp_http_client_get_status_code(client);
+        printf("GET exitoso, código de respuesta: %d\n", status_code);
+
+        if (response_data != NULL)
+        {
+            printf("Respuesta completa del servidor: %s\n", response_data);
+
+            // Analizar el contenido JSON usando cJSON
+            cJSON *json_response = cJSON_Parse(response_data);
+            if (json_response == NULL)
+            {
+                printf("Error al analizar JSON.\n");
+            }
+            else
+            {
+                // Extraer valor del campo "start"
+                cJSON *start = cJSON_GetObjectItemCaseSensitive(json_response, "start");
+                if (cJSON_IsBool(start))
+                {
+                    estado = cJSON_IsTrue(start) ? 1 : -1; // 1 si es `true`, 0 si es `false`
+                    printf("Valor de 'start': %s\n", estado ? "true" : "false");
+                }
+                else
+                {
+                    printf("El campo 'start' no es booleano o no existe.\n");
+                }
+                cJSON_Delete(json_response); // Libera la memoria del objeto JSON
+            }
+
+            free(response_data); // Libera el buffer de respuesta
+            response_data = NULL;
+            response_data_size = 0;
+        }
+        else
+        {
+            printf("No se recibió respuesta del servidor.\n");
+        }
+    }
+    else
+    {
+        printf("Error en el GET: %s\n", esp_err_to_name(err));
+    }
+
+    esp_http_client_cleanup(client);
+    return estado;
+}
 
 void enviarDatosMatriz(int matriz[9][9]) {
     char buffer[1024]; // Buffer para el string JSON
@@ -173,6 +281,20 @@ int obtenerEstadoCrawler(){
     int estado=http_get("http://192.168.4.2:8000/get_start_state/"); //0 - Detener ...... 1 - Empezar
     return estado;
 }
+
+//AGREGAR A CODIGO FINAL ----------------------------------------------------
+void enviarEstadoCrawler(){
+    char buffer[128];
+    int length = snprintf(buffer, sizeof(buffer), "{ \"estado\": %d }", estadoAprendiendoEjecutando);
+    if (length < 0 || length >= sizeof(buffer)) {
+        printf("Error al generar el JSON.\n");
+        return;
+    }
+    // Imprimir el JSON
+    printf("JSON generado:\n%s\n", buffer);
+    http_post("http://192.168.4.2:8000/api/recibir_estado/", buffer);
+}
+
 
 // Configuración del main
 void app_main() {
@@ -218,11 +340,11 @@ void app_main() {
 
         direction_t dir = get_movement_direction();
         if (dir == DIRECTION_FORWARD) {
-            printf("Hacia adelante\n");
+            printf("Direccion: Hacia adelante\n");
         } else if (dir == DIRECTION_BACKWARD) {
-            printf("Hacia atrás\n");
+            printf("Direccion: Hacia atrás\n");
         } else {
-            printf("Detenido\n");
+            printf("Direccion: Detenido\n");
         }
         
         char post_data[100];
@@ -237,13 +359,27 @@ void app_main() {
         //
         vTaskDelay(pdMS_TO_TICKS(1000));
         int estadoCrawler=obtenerEstadoCrawler();
-        if(estadoCrawler==0){
-            printf("Crawler detenido\n");
+        if(estadoCrawler==-1){
+            printf("Estado: Crawler detenido\n");
         }
         else{
-            printf("Crawler comenzado\n");
+            printf("Estado: Crawler comenzado\n");
         }
+        printf("Enviando datos de matriz...\n");
         enviarDatosMatriz(matriz);
+        printf("Enviando estado de crawler..\n");
+        enviarEstadoCrawler();
+
+        //No meter, testing
+        if(estadoAprendiendoEjecutando==-1){
+            estadoAprendiendoEjecutando=0;
+        }
+        else if(estadoAprendiendoEjecutando==0){
+            estadoAprendiendoEjecutando=1;
+        }
+        else if(estadoAprendiendoEjecutando==1){
+            estadoAprendiendoEjecutando=-1;
+        }
     }
     return;
 }

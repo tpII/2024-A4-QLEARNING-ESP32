@@ -10,13 +10,19 @@ from django.core.cache import cache
 
 # Variable global para el estado
 start = False  # Inicialmente apagado
+aprendiendoEjecutando=0 #-1-Detenido, 0-Aprendiendo, 1-Ejecutando
+textoEstadoCrawler="Detenido" #Detenido, Aprendiendo, Ejecutando lo aprendido
 
 
 matriz = [[0 for _ in range(9)] for _ in range(9)]  # Matriz 9x9 llena de ceros
 
 def mostrar_matriz(request):
     matriz = cache.get('matriz_global', [[0 for _ in range(9)] for _ in range(9)])  # Por defecto, una matriz 9x9 de ceros
-    return render(request, "matriz.html", {"matriz": matriz})
+    estado_crawler = cache.get('estado_crawler', textoEstadoCrawler)
+    return render(request, "matriz.html", {
+        "matriz": matriz,
+        "estado_crawler": estado_crawler
+    })
 
 def about(request):
     return HttpResponse("About")
@@ -63,9 +69,39 @@ def stop_button(request):
 # Método GET para consultar el estado de "start"
 def get_start_state(request):
     global start
-    print("Estado del crawler")
+    print("Boton start/stop:")
     print(start)
     response = JsonResponse({'start': start})
-
     print(response.content.decode('utf-8'))
+    response['Content-Type'] = 'application/json'
     return response
+
+
+@csrf_exempt
+def recibir_estado(request):
+    global textoEstadoCrawler
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            EstadoAprendiendoEjecutando = data.get('estado') 
+            print("Dato recibido estado: ")
+            print(EstadoAprendiendoEjecutando)# Intentamos extraer la matriz
+            if(EstadoAprendiendoEjecutando==-1):
+                textoEstadoCrawler="Detenido"
+            elif(EstadoAprendiendoEjecutando==0):
+                textoEstadoCrawler="Aprendiendo"
+            elif(EstadoAprendiendoEjecutando==1):
+                textoEstadoCrawler="Ejecutando lo aprendido"
+            cache.set('estado_crawler', textoEstadoCrawler, timeout=None)
+            print("Estado crawler:")
+            print(textoEstadoCrawler)# Sin límite de tiempo
+            cache.set('estado_crawler', textoEstadoCrawler, timeout=None)
+            return JsonResponse({'status': 'success', 'mensaje': 'Estado recibido y almacenado'}, status=200)
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'error', 'mensaje': 'JSON inválido'}, status=400)
+    else:
+        return JsonResponse({'status': 'error', 'mensaje': 'Solo acepta POST requests'}, status=405)
+
+def get_estado_crawler(request):
+    estado_crawler = cache.get('estado_crawler', textoEstadoCrawler)
+    return JsonResponse({"estado_crawler": estado_crawler})
