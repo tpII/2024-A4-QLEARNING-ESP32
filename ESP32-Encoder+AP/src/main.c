@@ -187,6 +187,8 @@ esp_err_t client_event_get_handler(esp_http_client_event_handle_t evt)
     }
     return ESP_OK;
 }
+
+
 int http_get(const char *url)
 {
     esp_http_client_config_t config = {
@@ -334,6 +336,7 @@ void app_main() {
         {73, 74, 75, 76, 77, 78, 79, 80, 81}
         };
 
+//el while solo es de prueba unitaria-----------------
     while (1) {
         int32_t count1 = encoder_get_count(&encoder1);
         int32_t count2 = encoder_get_count(&encoder2);
@@ -383,4 +386,5 @@ void app_main() {
         }
     }
     return;
+    //el while solo es de prueba unitaria-----------------
 }
