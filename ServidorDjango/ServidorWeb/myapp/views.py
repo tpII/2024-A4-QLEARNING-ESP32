@@ -15,7 +15,6 @@ textoEstadoCrawler="Detenido" #Detenido, Aprendiendo, Ejecutando lo aprendido
 
 
 matriz = [[0 for _ in range(9)] for _ in range(9)]  # Matriz 9x9 llena de ceros
-cache.set('matriz_global', matriz)
 
 def mostrar_matriz(request):
     matriz = cache.get('matriz_global', [[0 for _ in range(9)] for _ in range(9)])  # Por defecto, una matriz 9x9 de ceros
@@ -24,11 +23,6 @@ def mostrar_matriz(request):
         "matriz": matriz,
         "estado_crawler": estado_crawler
     })
-    
-def get_matriz(request):
-    ##matriz = cache.get('matriz_global', matriz)  # Supongamos que la matriz está almacenada en caché
-    matriz = cache.get('matriz_global', []) 
-    return JsonResponse({'matriz': matriz})
 
 def about(request):
     return HttpResponse("About")
