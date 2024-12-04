@@ -548,8 +548,8 @@ void app_main() {
     // Inicialización de hardware (Wi-Fi, encoders, etc.)
     init_servo();
     set_pos(SHOULDER_MID_PULSE, ELBOW_MID_PULSE);
-    set_servo_angle(LEDC_SHOULDER_CHANNEL, SHOULDER_MID_PULSE);
-    set_servo_angle(LEDC_ELBOW_CHANNEL, ELBOW_MID_PULSE);
+    set_servo_pulse(LEDC_SHOULDER_CHANNEL, SHOULDER_MID_PULSE);
+    set_servo_pulse(LEDC_ELBOW_CHANNEL, ELBOW_MID_PULSE);
 
     uart_set_baudrate(UART_NUM_0, 115200);
     nvs_flash_init(); // Inicializa NVS
