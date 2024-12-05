@@ -398,7 +398,7 @@ void tarea_q_learning(void *param) {
         }
 
         // 8. Controlar el tiempo de ejecución con FreeRTOS
-        vTaskDelay(pdMS_TO_TICKS(2000));  // Espera de medio segundo entre ciclos de aprendizaje
+        vTaskDelay(pdMS_TO_TICKS(1000));  // Espera de medio segundo entre ciclos de aprendizaje
     }
 
     // 9. Cuando se termine el aprendizaje, podemos salir del bucle
