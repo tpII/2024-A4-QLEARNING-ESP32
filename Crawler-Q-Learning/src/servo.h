@@ -18,9 +18,9 @@
 #define SHOULDER_MID_PULSE 600
 #define SHOULDER_MIN_PULSE 400
 
-#define ELBOW_MAX_PULSE 2100
+#define ELBOW_MAX_PULSE 2200
 #define ELBOW_MID_PULSE 1800
-#define ELBOW_MIN_PULSE 1500
+#define ELBOW_MIN_PULSE 1400
 
 // Configuración de LEDC para PWM
 #define LEDC_TIMER              LEDC_TIMER_0
