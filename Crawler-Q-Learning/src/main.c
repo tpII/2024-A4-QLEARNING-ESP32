@@ -384,10 +384,10 @@ void tarea_q_learning(void *param) {
         // 7. Mostrar la matriz Q para depuración (opcional)
         print_q_matrix(&agent);
 
-        // if(cont*20%100 == 0)
-        // {
-        //     enviarDatosMatriz(agent.Q);
-        // }
+        if(cont*20%100 == 0)
+        {
+            enviarDatosMatriz(agent.Q);
+        }
 
         // Incrementar el contador de iteraciones
         cont++;
@@ -404,7 +404,7 @@ void tarea_q_learning(void *param) {
     // 9. Cuando se termine el aprendizaje, podemos salir del bucle
     crawler_listo = true;  // Señalamos que el aprendizaje ha terminado
     // enviarDatosMatriz(agent.Q);
-    // enviarDatosMatriz(agent.Q);
+    enviarDatosMatriz(agent.Q);
     printf("Proceso de aprendizaje completado.\n");
 
     //---calculo del tiempo-----------
@@ -551,11 +551,11 @@ void app_main() {
     set_servo_pulse(LEDC_SHOULDER_CHANNEL, SHOULDER_MID_PULSE);
     set_servo_pulse(LEDC_ELBOW_CHANNEL, ELBOW_MID_PULSE);
 
-    // uart_set_baudrate(UART_NUM_0, 115200);
-    // nvs_flash_init(); // Inicializa NVS
+    uart_set_baudrate(UART_NUM_0, 115200);
+    nvs_flash_init(); // Inicializa NVS
 
-    // wifi_init_softap();
-    // esp_task_wdt_deinit();
+    wifi_init_softap();
+    esp_task_wdt_deinit();
 
     encoder_init(&encoder1, ENCODER1_OUT);
     encoder_init(&encoder2, ENCODER2_OUT);
