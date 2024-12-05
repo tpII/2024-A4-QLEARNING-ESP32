@@ -572,15 +572,82 @@ void app_main() {
     // Crear tareas en los dos núcleos:
 
     // Tarea para comunicación HTTP y Wi-Fi (Núcleo 0)
-    xTaskCreate(
-        tarea_q_learning,            // Función de la tarea
-        "Tarea_Q_Learning",          // Nombre de la tarea
-        4096,                       // Tamaño del stack
-        NULL,                       // Parámetro de entrada
-        2,                          // Prioridad
-        NULL                      // Handle de la tarea
-                                    // Núcleo al que se asigna (Core 0)
-    );
+    // xTaskCreate(
+    //     tarea_q_learning,            // Función de la tarea
+    //     "Tarea_Q_Learning",          // Nombre de la tarea
+    //     4096,                       // Tamaño del stack
+    //     NULL,                       // Parámetro de entrada
+    //     2,                          // Prioridad
+    //     NULL                      // Handle de la tarea
+    //                                 // Núcleo al que se asigna (Core 0)
+    // );
+
+    //---------PRUEBA PARA SABER LAS POSICIONES REALES DE LOS SERVOS-----------
+    int pos1 = 45;
+    int pos2 = 45;
+    while(1){
+        
+        printf("servo 1 %d grados, servo 2 %d grados\n", pos1, pos2);
+        vTaskDelay(pdMS_TO_TICKS(4000));
+        while(pos1!=90){
+            if(pos1<90){
+                pos1+=45;
+                process_move_shoulder(pos1);
+                printf("servo 1 %d grados, servo 2 %d grados\n", pos1, pos2);
+                vTaskDelay(pdMS_TO_TICKS(2000));
+            }
+            // else if(pos1>0){
+            //     pos1-=45;
+            //     process_move_shoulder(pos1);
+            //     printf("servo 1 %d grados, servo 2 %d grados\n", pos1, pos2);
+            //     vTaskDelay(pdMS_TO_TICKS(2000));
+            // }
+        }
+        while(pos1!=0){
+            if(pos1>0){
+                pos1-=45;
+                process_move_shoulder(pos1);
+                printf("servo 1 %d grados, servo 2 %d grados\n", pos1, pos2);
+                vTaskDelay(pdMS_TO_TICKS(2000));
+            }
+            // else if(pos1>0){
+            //     pos1-=45;
+            //     process_move_shoulder(pos1);
+            //     printf("servo 1 %d grados, servo 2 %d grados\n", pos1, pos2);
+            //     vTaskDelay(pdMS_TO_TICKS(2000));
+            // }
+        }
+        while(pos2!=90){
+            if(pos2<90){
+                pos2+=45;
+                process_move_elbow(pos2);
+                printf("servo 1 %d grados, servo 2 %d grados\n", pos1, pos2);
+                vTaskDelay(pdMS_TO_TICKS(2000));
+            }
+            // else if(pos1>0){
+            //     pos1-=45;
+            //     process_move_shoulder(pos1);
+            //     printf("servo 1 %d grados, servo 2 %d grados\n", pos1, pos2);
+            //     vTaskDelay(pdMS_TO_TICKS(2000));
+            // }
+        }
+        while(pos2!=0){
+            if(pos2>0){
+                pos2-=45;
+                process_move_elbow(pos2);
+                printf("servo 1 %d grados, servo 2 %d grados\n", pos1, pos2);
+                vTaskDelay(pdMS_TO_TICKS(2000));
+            }
+            // else if(pos1>0){
+            //     pos1-=45;
+            //     process_move_shoulder(pos1);
+            //     printf("servo 1 %d grados, servo 2 %d grados\n", pos1, pos2);
+            //     vTaskDelay(pdMS_TO_TICKS(2000));
+            // }
+        }
+
+
+    }
 
     // // Tarea para el aprendizaje Q-Learning (Núcleo 1)
     // xTaskCreatePinnedToCore(
