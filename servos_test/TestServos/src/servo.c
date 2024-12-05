@@ -144,7 +144,19 @@ void process_keypad(char key) {
             break;
         case 5:
             current_pos[1] = ELBOW_MAX_PULSE;
-            break;                                         
+            break;            
+        case 6:
+            current_pos[0] = SHOULDER_MID_PULSE;
+            break;      
+        case 7:
+            current_pos[0] = SHOULDER_MIN_PULSE;
+            break;      
+        case 8:
+            current_pos[1] = ELBOW_MID_PULSE;
+            break;      
+        case 9:
+            current_pos[1] = ELBOW_MIN_PULSE;
+            break;                                   
         default:
             break;
     }
@@ -189,7 +201,7 @@ void process_move_elbow(int angle) {
 }
 
 // Definir la secuencia de teclas
-char key_sequence[] = {'8', '2', '4', '6', '8', '2', '4', '6'};
+char key_sequence[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
 int sequence_length = sizeof(key_sequence) / sizeof(key_sequence[0]);
 
 void app_main() {
