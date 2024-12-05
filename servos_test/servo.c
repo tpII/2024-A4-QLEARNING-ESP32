@@ -76,32 +76,81 @@ void init_servo() {
 }
 
 // Función para procesar la entrada del teclado
+// void process_keypad(char key) {
+//     switch (key) {
+//     case '8': // Arriba
+//         current_pos[0] += SHOULDER_STEP_PULSE;
+//         if (current_pos[0] > SHOULDER_MAX_PULSE) current_pos[0] = SHOULDER_MAX_PULSE;
+//         set_servo_pulse(LEDC_SHOULDER_CHANNEL, current_pos[0]);
+//         break;
+//     case '2': // Abajo
+//         current_pos[0] -= SHOULDER_STEP_PULSE;
+//         if (current_pos[0] < SHOULDER_MIN_PULSE) current_pos[0] = SHOULDER_MIN_PULSE;
+//         set_servo_pulse(LEDC_SHOULDER_CHANNEL, current_pos[0]);
+//         break;
+//     case '4': // Izquierda
+//         current_pos[1] += ELBOW_STEP_PULSE;
+//         if (current_pos[1] > ELBOW_MAX_PULSE) current_pos[1] = ELBOW_MAX_PULSE;
+//         set_servo_pulse(LEDC_ELBOW_CHANNEL, current_pos[1]);
+//         break;
+//     case '6': // Derecha
+//         current_pos[1] -= ELBOW_STEP_PULSE;
+//         if (current_pos[1] < ELBOW_MIN_PULSE) current_pos[1] = ELBOW_MIN_PULSE;
+//         set_servo_pulse(LEDC_ELBOW_CHANNEL, current_pos[1]);
+//         break;
+//     }
+// }
+
+// Función para procesar la entrada del teclado
 void process_keypad(char key) {
+    // switch (key) {
+    // case '8': // Arriba
+    //     current_pos[0] += SHOULDER_STEP_PULSE;
+    //     if (current_pos[0] > SHOULDER_MAX_PULSE) current_pos[0] = SHOULDER_MAX_PULSE;
+    //     set_servo_pulse(LEDC_SHOULDER_CHANNEL, current_pos[0]);
+    //     break;
+    // case '2': // Abajo
+    //     current_pos[0] -= SHOULDER_STEP_PULSE;
+    //     if (current_pos[0] < SHOULDER_MIN_PULSE) current_pos[0] = SHOULDER_MIN_PULSE;
+    //     set_servo_pulse(LEDC_SHOULDER_CHANNEL, current_pos[0]);
+    //     break;
+    // case '4': // Izquierda
+    //     current_pos[1] += ELBOW_STEP_PULSE;
+    //     if (current_pos[1] > ELBOW_MAX_PULSE) current_pos[1] = ELBOW_MAX_PULSE;
+    //     set_servo_pulse(LEDC_ELBOW_CHANNEL, current_pos[1]);
+    //     break;
+    // case '6': // Derecha
+    //     current_pos[1] -= ELBOW_STEP_PULSE;
+    //     if (current_pos[1] < ELBOW_MIN_PULSE) current_pos[1] = ELBOW_MIN_PULSE;
+    //     set_servo_pulse(LEDC_ELBOW_CHANNEL, current_pos[1]);
+    //     break;
+    // }
+
     switch (key) {
-    case '8': // Arriba
-        current_pos[0] += SHOULDER_STEP_PULSE;
-        if (current_pos[0] > SHOULDER_MAX_PULSE) current_pos[0] = SHOULDER_MAX_PULSE;
-        set_servo_pulse(LEDC_SHOULDER_CHANNEL, current_pos[0]);
-        break;
-    case '2': // Abajo
-        current_pos[0] -= SHOULDER_STEP_PULSE;
-        if (current_pos[0] < SHOULDER_MIN_PULSE) current_pos[0] = SHOULDER_MIN_PULSE;
-        set_servo_pulse(LEDC_SHOULDER_CHANNEL, current_pos[0]);
-        break;
-    case '4': // Izquierda
-        current_pos[1] += ELBOW_STEP_PULSE;
-        if (current_pos[1] > ELBOW_MAX_PULSE) current_pos[1] = ELBOW_MAX_PULSE;
-        set_servo_pulse(LEDC_ELBOW_CHANNEL, current_pos[1]);
-        break;
-    case '6': // Derecha
-        current_pos[1] -= ELBOW_STEP_PULSE;
-        if (current_pos[1] < ELBOW_MIN_PULSE) current_pos[1] = ELBOW_MIN_PULSE;
-        set_servo_pulse(LEDC_ELBOW_CHANNEL, current_pos[1]);
-        break;
+        case 0:
+            current_pos[0] = SHOULDER_MIN_PULSE;
+            break;
+        case 1:
+            current_pos[0] = SHOULDER_MID_PULSE;
+            break;
+        case 2:
+            current_pos[0] = SHOULDER_MAX_PULSE;
+            break;
+        case 3:
+            current_pos[1] = ELBOW_MIN_PULSE;
+            break;
+        case 4:
+            current_pos[1] = ELBOW_MID_PULSE;
+            break;
+        case 5:
+            current_pos[1] = ELBOW_MAX_PULSE;
+            break;                                         
+        default:
+            break;
     }
+    set_servo_pulse(LEDC_SHOULDER_CHANNEL, current_pos[0]);
+    set_servo_pulse(LEDC_ELBOW_CHANNEL, current_pos[1]);
 }
-
-
 
 
 

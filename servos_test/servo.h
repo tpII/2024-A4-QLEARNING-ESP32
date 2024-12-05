@@ -10,7 +10,7 @@
 
 // Definir pines para los servos
 #define SHOULDER_PIN    GPIO_NUM_13
-#define ELBOW_PIN       GPIO_NUM_12
+#define ELBOW_PIN       GPIO_NUM_14
 
 // Configuración del servo
 #define SERVO_MIN_PULSEWIDTH             400     // Ancho de pulso para 0 grados en microsegundos
@@ -21,14 +21,17 @@
 #define SERVO_MID_PULSE 1700
 #define SERVO_MIN_PULSE 1200
 #define SERVO_STEP_PULSE 100 // Ajusta este valor según sea necesario
-#define SHOULDER_MAX_PULSE 900
+
+#define SHOULDER_MAX_PULSE 800
 #define SHOULDER_MID_PULSE 600
-#define SHOULDER_MIN_PULSE 300
+#define SHOULDER_MIN_PULSE 400
+
 #define SHOULDER_STEP_PULSE 300
 
 #define ELBOW_MAX_PULSE 2200
-#define ELBOW_MID_PULSE 1700
-#define ELBOW_MIN_PULSE 1200
+#define ELBOW_MID_PULSE 1800
+#define ELBOW_MIN_PULSE 1500
+
 #define ELBOW_STEP_PULSE 500
 
 // Configuración de LEDC para PWM
