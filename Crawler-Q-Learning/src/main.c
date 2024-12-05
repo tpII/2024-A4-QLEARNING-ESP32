@@ -574,7 +574,7 @@ void app_main() {
     // Tarea para comunicación HTTP y Wi-Fi (Núcleo 0)
     xTaskCreate(
         tarea_q_learning,            // Función de la tarea
-        "Tarea_HTTP_WiFi",          // Nombre de la tarea
+        "Tarea_Q_Learning",          // Nombre de la tarea
         4096,                       // Tamaño del stack
         NULL,                       // Parámetro de entrada
         2,                          // Prioridad
