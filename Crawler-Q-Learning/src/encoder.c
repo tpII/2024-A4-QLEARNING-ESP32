@@ -50,6 +50,7 @@ void tarea_verificar_variable(void *param) {
             encoder_reset_count(encoders->encoder1);
             encoder_reset_count(encoders->encoder2);
         }
+        
         // Espera 5 segundos
         vTaskDelay(pdMS_TO_TICKS(10000));
     }
@@ -90,6 +91,17 @@ direction_t get_movement_direction() {
     return movement_direction;
 }
 
+float calcular_disparidad(int contador1, int contador2) {
+    int diferencia = abs(contador1 - contador2); // Diferencia absoluta entre ambos contadores
+    int maximo = (contador1 > contador2) ? contador1 : contador2; // Mayor de los dos valores
+
+    if (maximo == 0) {
+        return 0.0; // Evitar división por cero
+    }
+
+    return ((float)diferencia / maximo) * 100.0; // Disparidad en porcentaje
+}
+
 float encoder_get_reward(encoder_t *encoder){
     int32_t real_value= (encoder->count)/2;
     float reward = real_value >= 5 ? 1.0 : (float)real_value / 9.0; //Acotado a 5 como max (rendijas de una vuelta)
@@ -106,6 +118,14 @@ float get_reward(encoder_t *encoder1, encoder_t *encoder2){
     if(movement_direction== DIRECTION_BACKWARD){
         reward_final= (-1) * reward_final;
         }
+    movement_direction= DIRECTION_STOPPED;
+    //Deteccion de falso positivo - TESTEANDO
+    int contador1=encoder_get_count(encoder1);
+    int contador2=encoder_get_count(encoder2);
+    int disparidad=calcular_disparidad(contador1,contador2);
+    if(disparidad>=40){
+        reward_final=0;
+    }
     printf("Recompensa total: %f \n",reward_final);
     encoder_reset_count(encoder1);
     encoder_reset_count(encoder2);

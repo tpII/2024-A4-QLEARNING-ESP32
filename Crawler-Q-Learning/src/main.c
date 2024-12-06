@@ -1059,6 +1059,7 @@ void mover_servos_continuamente(int servo1_initial_position, int servo2_initial_
         vTaskDelay(pdMS_TO_TICKS(2000));
         estadoCrawler=obtenerEstadoCrawler();
     }
+    estadoAprendiendoEjecutando=-1;
 }
 
 // float dwalltime()
