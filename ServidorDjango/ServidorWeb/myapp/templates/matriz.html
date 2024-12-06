@@ -80,9 +80,21 @@
     <main>
         <h1>Estado: <span id="estado-crawler">{{ estado_crawler }}</span></h1>
         <h1>Matriz Recibida</h1>
-        <table>
-            <!-- La tabla se llenará dinámicamente -->
-        </table>
+        {% if matriz %}
+            <table>
+         <!-- La tabla se llenará dinámicamente -->
+
+                {% for fila in matriz %}
+                    <tr>
+                        {% for valor in fila %}
+                            <td>{{ valor }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p>No se ha recibido ninguna matriz aún.</p>
+        {% endif %}
 
         <div class="buttons">
             <form action="/start/" method="post">
@@ -116,6 +128,7 @@
         // Llama a la función cada segundo
         setInterval(actualizarEstado, 1000);
 
+        
         // Función para actualizar la matriz
         async function actualizarMatriz() {
             try {
@@ -161,6 +174,7 @@
 
         // Llama a la función cada 5 segundos
         setInterval(actualizarMatriz, 5000);
+
 
     </script>
 </body>
