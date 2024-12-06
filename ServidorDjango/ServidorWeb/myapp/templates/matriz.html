@@ -95,20 +95,52 @@
         {% else %}
             <p>No se ha recibido ninguna matriz aún.</p>
         {% endif %}
-
         <div class="buttons">
-            <form action="/start/" method="post">
-                {% csrf_token %}
-                <button type="submit">Start</button>
-            </form>
-            <form action="/stop/" method="post">
-                {% csrf_token %}
-                <button type="submit">Stop</button>
-            </form>
+            <button id="start-button" onclick="handleStart()">Start</button>
+            <button id="stop-button" onclick="handleStop()">Stop</button>
         </div>
     </main>
 
     <script>
+    async function handleStart() {
+        try {
+            const response = await fetch('/start/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}', // Usamos el token CSRF de Django
+                    'Content-Type': 'application/json'
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                console.log("Start activated:", data);
+            } else {
+                console.error("Error al activar Start:", response.statusText);
+            }
+        } catch (error) {
+            console.error("Error de conexión:", error);
+        }
+    }
+
+    async function handleStop() {
+        try {
+            const response = await fetch('/stop/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                console.log("Stop activated:", data);
+            } else {
+                console.error("Error al activar Stop:", response.statusText);
+            }
+        } catch (error) {
+            console.error("Error de conexión:", error);
+        }
+    }
         // Función para actualizar el estado
         async function actualizarEstado() {
             try {
