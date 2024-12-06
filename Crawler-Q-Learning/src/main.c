@@ -48,7 +48,9 @@
 #define MAX_STA_CONN 4
 #define TAG "HTTP_GET"
 
-encoder_t encoder1, encoder2;  // Instancias de los dos encoders
+//encoder_t encoder1, encoder2;  // Instancias de los dos encoders
+encoder_t encoder1;
+encoder_t encoder2;
 
 SemaphoreHandle_t xMutex = NULL;
 

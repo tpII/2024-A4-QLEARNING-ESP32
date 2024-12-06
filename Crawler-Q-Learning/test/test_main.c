@@ -6,7 +6,7 @@ void setUp(void){
 void tearDown(void){
 
 }
-encoder_t encoder1, encoder2;
+
 void test_example(void) {
     TEST_ASSERT_EQUAL(1, 1);  // Ejemplo simple
 }
