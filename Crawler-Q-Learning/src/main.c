@@ -217,7 +217,6 @@ int http_get(const char *url)
                 if (cJSON_IsBool(start))
                 {
                     estado = cJSON_IsTrue(start) ? 1 : -1; // 1 si es `true`, 0 si es `false`
-                    printf("Valor de 'start': %s\n", estado ? "true" : "false");
                 }
                 else
                 {
