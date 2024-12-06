@@ -59,6 +59,8 @@ char *response_data = NULL;
 size_t response_data_size = 0;
 int estadoCrawler=-1; //-1 Detenido, 1 Empezado(haciendo algo)
 int estadoAprendiendoEjecutando=-1; //-1 Detenido, 0 Aprendiendo, 1 Ejecutando
+
+
 //------------
 
 // Configura el modo AP del ESP32---------------------------------------
@@ -231,11 +233,13 @@ int http_get(const char *url)
         else
         {
             printf("No se recibió respuesta del servidor.\n");
+            estado=-1;
         }
     }
     else
     {
         printf("Error en el GET: %s\n", esp_err_to_name(err));
+        estado=-1;
     }
 
     esp_http_client_cleanup(client);
@@ -277,7 +281,7 @@ void enviarDatosMatriz(float matriz[9][9]) {
 //AGREGAR CODIGO -------------------------------------------------
 int obtenerEstadoCrawler(){
     printf("Solicitando estado de la variable start...\n");
-    int estado=http_get("http://192.168.4.2:8000/get_start_state/"); //0 - Detener ...... 1 - Empezar
+    int estado=http_get("http://192.168.4.2:8000/get_start_state/"); //-1 - Detener ...... 1 - Empezar
     return estado;
 }
 
@@ -338,87 +342,104 @@ bool accion_valida(int current_state, int action);
 // Proceso de aprendizaje----------------------------------------------------HILO APRENDIZAJE--------------------------------------------------
 
 void tarea_q_learning(void *param) {
-    int current_state = 0;  // Estado inicial
-    int next_state = 0;
-    int action = 0;
-    int cont = 0;
+    while(1){
+        q_agent_init(&agent);
+        int current_state = 0;  // Estado inicial
+        int next_state = 0;
+        int action = 0;
+        int cont = 0;
 
-    // Número máximo de iteraciones para el aprendizaje
-    int max_iterations = 100;
+        // Número máximo de iteraciones para el aprendizaje
+        int max_iterations = 100;
 
-    // float inicio = dwalltime();
+        // float inicio = dwalltime();
 
-    // Se asume que se quiere entrenar por un número determinado de iteraciones
-    while (cont < max_iterations) {
+        // Se asume que se quiere entrenar por un número determinado de iteraciones
+        estadoAprendiendoEjecutando=0;
+        enviarEstadoCrawler();
+        estadoCrawler=obtenerEstadoCrawler();
+        while(estadoCrawler!=(1)){
+            estadoCrawler=obtenerEstadoCrawler();
+            vTaskDelay(pdMS_TO_TICKS(1000));
+            printf("Esperando a que se presione el botón START en el servidor para comenzar a aprender...\n");
 
-        if (xSemaphoreTake(xMutex, portMAX_DELAY)) {
-            // 1. Seleccionar acción en función de la política epsilon-greedy
-            action = q_agent_select_action(&agent, current_state);
-            xSemaphoreGive(xMutex);
-	    }	
+        }
+        while ((estadoCrawler==1)) {
 
-        // 2. Ejecutar la acción (mover los servos)
-        next_state = obtener_siguiente_estado(current_state, action);  // Determina el siguiente estado
+            if (xSemaphoreTake(xMutex, portMAX_DELAY)) {
+                // 1. Seleccionar acción en función de la política epsilon-greedy
+                action = q_agent_select_action(&agent, current_state);
+                xSemaphoreGive(xMutex);
+            }	
 
-        // Validar que el estado no se sale de los límites y que la acción es válida
-        if (!accion_valida(current_state, action)) {
-            printf("Acción no válida desde el estado %d con acción %d\n", current_state, action);
-            continue;  // Saltamos esta iteración si la acción no es válida
+            // 2. Ejecutar la acción (mover los servos)
+            next_state = obtener_siguiente_estado(current_state, action);  // Determina el siguiente estado
+
+            // Validar que el estado no se sale de los límites y que la acción es válida
+            if (!accion_valida(current_state, action)) {
+                printf("Acción no válida desde el estado %d con acción %d\n", current_state, action);
+                continue;  // Saltamos esta iteración si la acción no es válida
+            }
+
+            // 3. Mover servos según el estado siguiente (simular el movimiento)
+            mover_servos(next_state);
+            // simu_mover_servos(next_state, action);
+
+            if (xSemaphoreTake(xMutex, portMAX_DELAY)) {
+                // 4. Obtener la recompensa (basado en los encoders)
+                encoder_signal(&agent, current_state, next_state, &encoder1, &encoder2);
+                // simu_encoder_signal(&agent, current_state, next_state);
+        
+                // 5. Actualizar la matriz Q
+                q_agent_update(&agent, current_state, action, next_state);
+                xSemaphoreGive(xMutex);
+            }	
+
+            // 6. Actualizar el estado actual para el siguiente ciclo
+            current_state = next_state;
+
+            // 7. Mostrar la matriz Q para depuración (opcional)
+            print_q_matrix(&agent);
+
+            if(cont*20%100 == 0)
+            {
+                enviarDatosMatriz(agent.Q);
+            }
+
+            // Incrementar el contador de iteraciones
+            cont++;
+
+            if(cont*20%100 == 0)
+            {
+                agent.epsilon = agent.epsilon * 0.99; // Decaimiento exponencial
+            }
+
+            // 8. Controlar el tiempo de ejecución con FreeRTOS
+            enviarEstadoCrawler();
+            vTaskDelay(pdMS_TO_TICKS(1000));  // Espera de medio segundo entre ciclos de aprendizaje
+            estadoCrawler=obtenerEstadoCrawler();
         }
 
-        // 3. Mover servos según el estado siguiente (simular el movimiento)
-        mover_servos(next_state);
-        // simu_mover_servos(next_state, action);
+        // 9. Cuando se termine el aprendizaje, podemos salir del bucle
+        crawler_listo = true;  // Señalamos que el aprendizaje ha terminado
+        // enviarDatosMatriz(agent.Q);
+        enviarDatosMatriz(agent.Q);
+        printf("Proceso de aprendizaje completado.\n");
 
-        if (xSemaphoreTake(xMutex, portMAX_DELAY)) {
-            // 4. Obtener la recompensa (basado en los encoders)
-            encoder_signal(&agent, current_state, next_state, &encoder1, &encoder2);
-            // simu_encoder_signal(&agent, current_state, next_state);
-    
-            // 5. Actualizar la matriz Q
-            q_agent_update(&agent, current_state, action, next_state);
-            xSemaphoreGive(xMutex);
-	    }	
+        estadoAprendiendoEjecutando=-1;
+        enviarEstadoCrawler();
 
-        // 6. Actualizar el estado actual para el siguiente ciclo
-        current_state = next_state;
+        //---calculo del tiempo-----------
+        // float fin = dwalltime();
+        // float tiempo_total = fin - inicio;
+        // float tiempo_de_delay = 2 * cont; // Cada delay es de 2 segundos
+        // float tiempo_ejecucion_real = tiempo_total - tiempo_de_delay;
+        // printf("Tiempo total del bucle: %.2f segundos\n", tiempo_total);
+        // printf("Tiempo de ejecución sin delay: %.2f segundos\n", tiempo_ejecucion_real);
+        //-------------------------------
 
-        // 7. Mostrar la matriz Q para depuración (opcional)
-        print_q_matrix(&agent);
-
-        if(cont*20%100 == 0)
-        {
-            enviarDatosMatriz(agent.Q);
-        }
-
-        // Incrementar el contador de iteraciones
-        cont++;
-
-        if(cont*20%100 == 0)
-        {
-             agent.epsilon = agent.epsilon * 0.99; // Decaimiento exponencial
-        }
-
-        // 8. Controlar el tiempo de ejecución con FreeRTOS
-        vTaskDelay(pdMS_TO_TICKS(1000));  // Espera de medio segundo entre ciclos de aprendizaje
+        mover_servos_continuamente(45,0);
     }
-
-    // 9. Cuando se termine el aprendizaje, podemos salir del bucle
-    crawler_listo = true;  // Señalamos que el aprendizaje ha terminado
-    // enviarDatosMatriz(agent.Q);
-    enviarDatosMatriz(agent.Q);
-    printf("Proceso de aprendizaje completado.\n");
-
-    //---calculo del tiempo-----------
-    // float fin = dwalltime();
-    // float tiempo_total = fin - inicio;
-    // float tiempo_de_delay = 2 * cont; // Cada delay es de 2 segundos
-    // float tiempo_ejecucion_real = tiempo_total - tiempo_de_delay;
-    // printf("Tiempo total del bucle: %.2f segundos\n", tiempo_total);
-    // printf("Tiempo de ejecución sin delay: %.2f segundos\n", tiempo_ejecucion_real);
-    //-------------------------------
-
-    mover_servos_continuamente(45,0);
 }
 
 //---------------------------------------------------------------------FIN APRENDIZAJE-------------------------------------------------------------
@@ -972,8 +993,16 @@ void mover_servos_continuamente(int servo1_initial_position, int servo2_initial_
     //     printf("Servo 1: %d Servo 2: %d\n", servo1_initial_position, servo2_initial_position);
     //     vTaskDelay(pdMS_TO_TICKS(2000));
     // }
-
-    while (1) {
+    estadoCrawler=obtenerEstadoCrawler();
+    while(estadoCrawler!=(1)){
+        printf("Esperando a que se presione el botón START para comenzar a ejecutar lo aprendido.--\n");
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        enviarEstadoCrawler();
+        estadoCrawler=obtenerEstadoCrawler();
+    }
+    estadoAprendiendoEjecutando=1;
+    enviarEstadoCrawler();
+    while (estadoCrawler==1) {
         // Movimiento de inicial a mejor posición
         printf("Moviendo hacia la mejor posición...\n");
         while ((servo1_initial_position != servo1_best_position) || (servo2_initial_position != servo2_best_position)) {
@@ -1027,7 +1056,9 @@ void mover_servos_continuamente(int servo1_initial_position, int servo2_initial_
 
         }
         printf("Servo 1: %d Servo 2: %d\n", servo1_initial_position, servo2_initial_position);
+        enviarEstadoCrawler();
         vTaskDelay(pdMS_TO_TICKS(2000));
+        estadoCrawler=obtenerEstadoCrawler();
     }
 }
 
