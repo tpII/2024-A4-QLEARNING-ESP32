@@ -98,12 +98,13 @@ float encoder_get_reward(encoder_t *encoder){
 
 float get_reward(encoder_t *encoder1, encoder_t *encoder2){
     //printf("Obteniendo recompensas...\n");
+    printf("Contadores encoder1: %ld, encoder2: %ld \n",encoder1->count,encoder2->count);
     float reward_encoder1=encoder_get_reward(encoder1);
-    //printf("Recompensa encoder1: %f \n",reward_encoder1);
+    printf("Recompensa encoder1: %f \n",reward_encoder1);
     float reward_encoder2=encoder_get_reward(encoder2);
-    //printf("Recompensa encoder2: %f \n",reward_encoder2);
+    printf("Recompensa encoder2: %f \n",reward_encoder2);
     float reward_final= (reward_encoder1 + reward_encoder2)/2;
-    //printf("Recompensa total: %f \n",reward_final);
+    printf("Recompensa total: %f \n",reward_final);
     encoder_reset_count(encoder1);
     encoder_reset_count(encoder2);
     return reward_final;

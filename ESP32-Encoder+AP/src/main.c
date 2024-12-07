@@ -359,7 +359,7 @@ void app_main() {
         
         //
         vTaskDelay(pdMS_TO_TICKS(1000));
-        int estadoCrawler=obtenerEstadoCrawler();
+        //int estadoCrawler=obtenerEstadoCrawler();
         if(estadoCrawler==-1){
             printf("Estado: Crawler detenido\n");
         }
@@ -367,9 +367,9 @@ void app_main() {
             printf("Estado: Crawler comenzado\n");
         }
         printf("Enviando datos de matriz...\n");
-        enviarDatosMatriz(matriz);
+        //enviarDatosMatriz(matriz);
         printf("Enviando estado de crawler..\n");
-        enviarEstadoCrawler();
+        //enviarEstadoCrawler();
 
         //No meter, testing
         if(estadoAprendiendoEjecutando==-1){
