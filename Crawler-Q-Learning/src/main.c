@@ -398,7 +398,7 @@ void tarea_q_learning(void *param) {
             current_state = next_state;
 
             // 7. Mostrar la matriz Q para depuración (opcional)
-            print_q_matrix(&agent);
+            //print_q_matrix(&agent);
 
             if(cont*20%100 == 0)
             {
