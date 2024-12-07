@@ -24,6 +24,7 @@ void encoder_isr_handler(void *arg) {
             // Si el último fue el encoder 2 y la diferencia de tiempo es pequeña
             movement_direction = DIRECTION_FORWARD; 
         }
+        printf("interrupcion en encoder 1\n");
         last_encoder_triggered = 1;
     } else if (encoder->pin_out == ENCODER2_OUT) {
         if (last_encoder_triggered == 1 && (now - last_trigger_time) < 500000) { 
@@ -31,6 +32,7 @@ void encoder_isr_handler(void *arg) {
             movement_direction = DIRECTION_BACKWARD; 
         }
         last_encoder_triggered = 2;
+        printf("interrupcion en encoder 2\n");
     }
     // Actualizar el tiempo del último pulso
     last_trigger_time = now;
@@ -91,7 +93,9 @@ direction_t get_movement_direction() {
 }
 
 float encoder_get_reward(encoder_t *encoder){
+    printf("Valor real del contador de encoder: %ld\n",encoder->count);
     int32_t real_value= (encoder->count)/2;
+    printf("Valor dividido del contador de encoder: %ld\n",real_value);
     float reward = real_value >= 5 ? 1.0 : (float)real_value / 5.0; //Acotado a 5 como max (rendijas de una vuelta)
     return reward;
 }
@@ -103,10 +107,14 @@ float get_reward(encoder_t *encoder1, encoder_t *encoder2){
     float reward_encoder2=encoder_get_reward(encoder2);
     printf("Recompensa encoder2: %f \n",reward_encoder2);
     float reward_final= (reward_encoder1 + reward_encoder2)/2;
+    printf("Recompensa total antes de disparidad: %f \n",reward_final);
     if(movement_direction== DIRECTION_BACKWARD){
         reward_final= (-1) * reward_final;
         }
-    printf("Recompensa total: %f \n",reward_final);
+    if(abs(encoder_get_count(encoder1)-encoder_get_count(encoder2))>1){
+        reward_final=0;
+    }
+    printf("Recompensa total luego de disparidad: %f \n",reward_final);
     encoder_reset_count(encoder1);
     encoder_reset_count(encoder2);
     return reward_final;

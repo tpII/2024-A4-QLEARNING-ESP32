@@ -342,7 +342,7 @@ void tarea_q_learning(void *param) {
     int cont = 0;
 
     // Número máximo de iteraciones para el aprendizaje
-    int max_iterations = 100;
+    int max_iterations = 1000;
 
     // float inicio = dwalltime();
 
@@ -382,11 +382,11 @@ void tarea_q_learning(void *param) {
         current_state = next_state;
 
         // 7. Mostrar la matriz Q para depuración (opcional)
-        print_q_matrix(&agent);
+        //print_q_matrix(&agent);
 
         if(cont*20%100 == 0)
         {
-            enviarDatosMatriz(agent.Q);
+            // enviarDatosMatriz(agent.Q);
         }
 
         // Incrementar el contador de iteraciones
@@ -404,7 +404,7 @@ void tarea_q_learning(void *param) {
     // 9. Cuando se termine el aprendizaje, podemos salir del bucle
     crawler_listo = true;  // Señalamos que el aprendizaje ha terminado
     // enviarDatosMatriz(agent.Q);
-    enviarDatosMatriz(agent.Q);
+    // enviarDatosMatriz(agent.Q);
     printf("Proceso de aprendizaje completado.\n");
 
     //---calculo del tiempo-----------
@@ -554,8 +554,8 @@ void app_main() {
     uart_set_baudrate(UART_NUM_0, 115200);
     nvs_flash_init(); // Inicializa NVS
 
-    wifi_init_softap();
-    esp_task_wdt_deinit();
+    // wifi_init_softap();
+    // esp_task_wdt_deinit();
 
     encoder_init(&encoder1, ENCODER1_OUT);
     encoder_init(&encoder2, ENCODER2_OUT);
@@ -766,7 +766,7 @@ void q_agent_update(Q_Agent *agent, int estado, int accion, int siguiente_estado
     // Actualizar la tabla Q
     agent->Q[estado][siguiente_estado] = old_q + agent->alpha * (reward + agent->gamma * max_q_next - old_q);
 
-    print_r_matrix(agent);
+    //print_r_matrix(agent);
 
 }
 
