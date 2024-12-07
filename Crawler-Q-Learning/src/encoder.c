@@ -92,7 +92,7 @@ direction_t get_movement_direction() {
 }
 
 float calcular_disparidad(int contador1, int contador2) {
-    int diferencia = abs(contador1 - contador2); // Diferencia absoluta entre ambos contadores
+    int diferencia = abs((contador1/2) - (contador2/2)); // Diferencia absoluta entre ambos contadores
     int maximo = (contador1 > contador2) ? contador1 : contador2; // Mayor de los dos valores
 
     if (maximo == 0) {
@@ -104,7 +104,7 @@ float calcular_disparidad(int contador1, int contador2) {
 
 float encoder_get_reward(encoder_t *encoder){
     int32_t real_value= (encoder->count)/2;
-    float reward = real_value >= 5 ? 1.0 : (float)real_value / 9.0; //Acotado a 5 como max (rendijas de una vuelta)
+    float reward = real_value >= 3 ? 1.0 : (float)real_value / 3.0; //Acotado a 5 como max (rendijas de una vuelta)
     return reward;
 }
 
