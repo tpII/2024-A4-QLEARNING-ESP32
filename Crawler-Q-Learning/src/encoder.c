@@ -104,7 +104,7 @@ float calcular_disparidad(int contador1, int contador2) {
 
 float encoder_get_reward(encoder_t *encoder){
     int32_t real_value= (encoder->count)/2;
-    float reward = real_value >= 5 ? 1.0 : (float)real_value / 9.0; //Acotado a 5 como max (rendijas de una vuelta)
+    float reward = real_value >= 3 ? 1.0 : (float)real_value / 3.0; //Acotado a 5 como max (rendijas de una vuelta)
     return reward;
 }
 

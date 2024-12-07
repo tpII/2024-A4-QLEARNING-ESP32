@@ -44,6 +44,7 @@ def recibir_dato(request):
             if matriz and len(matriz) == 9 and all(len(row) == 9 for row in matriz):
                 # Guarda la matriz en la caché
                 cache.set('matriz_global', matriz, timeout=None)  # Sin límite de tiempo
+                print(matriz)
                 return JsonResponse({'status': 'success', 'mensaje': 'Matriz recibida y almacenada'}, status=200)
             else:
                 return JsonResponse({'status': 'error', 'mensaje': 'La matriz debe ser 9x9'}, status=400)

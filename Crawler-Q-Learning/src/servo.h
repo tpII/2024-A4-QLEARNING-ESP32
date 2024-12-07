@@ -14,7 +14,7 @@
 #define ELBOW_PIN       GPIO_NUM_14
 
 // Definiciones de pulsos para el hombro y el codo
-#define SHOULDER_MAX_PULSE 800
+#define SHOULDER_MAX_PULSE 700
 #define SHOULDER_MID_PULSE 600
 #define SHOULDER_MIN_PULSE 400
 
