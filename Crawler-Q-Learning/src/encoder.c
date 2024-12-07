@@ -109,7 +109,7 @@ float encoder_get_reward(encoder_t *encoder){
     printf("Contador real: %ld \n",encoder_get_count(encoder));
     int32_t real_value= (encoder->count)/2;
     printf("Contador final (divido por 2): %ld \n", real_value);
-    float reward = real_value >= 3 ? 1.0 : (float)real_value / 3.0; //Acotado a 5 como max (rendijas de una vuelta)
+    float reward = real_value >= 5 ? 1.0 : (float)real_value / 5.0; //Acotado a 5 como max (rendijas de una vuelta)
     return reward;
 }
 
