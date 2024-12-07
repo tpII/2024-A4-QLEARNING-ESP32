@@ -24,13 +24,13 @@ void encoder_isr_handler(void *arg) {
             // Si el último fue el encoder 2 y la diferencia de tiempo es pequeña
             movement_direction = DIRECTION_FORWARD; 
         }
-        printf("Interrupción en encoder 1\n");
+        // printf("Interrupción en encoder 1\n");
         last_encoder_triggered = 1;
     } else if (encoder->pin_out == ENCODER2_OUT) {
         if (last_encoder_triggered == 1 && (now - last_trigger_time) < 500000) { 
             // Si el último fue el encoder 1 y la diferencia de tiempo es pequeña
             movement_direction = DIRECTION_BACKWARD;
-            printf("Interrupción en encoder 2\n"); 
+            // printf("Interrupción en encoder 2\n"); 
         }
         last_encoder_triggered = 2;
     }
