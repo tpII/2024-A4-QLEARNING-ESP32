@@ -24,7 +24,7 @@ void encoder_isr_handler(void *arg) {
             // Si el último fue el encoder 2 y la diferencia de tiempo es pequeña
             movement_direction = DIRECTION_FORWARD; 
         }
-        printf("interrupcion en encoder 1\n");
+        // printf("interrupcion en encoder 1\n");
         last_encoder_triggered = 1;
     } else if (encoder->pin_out == ENCODER2_OUT) {
         if (last_encoder_triggered == 1 && (now - last_trigger_time) < 500000) { 
@@ -32,7 +32,7 @@ void encoder_isr_handler(void *arg) {
             movement_direction = DIRECTION_BACKWARD; 
         }
         last_encoder_triggered = 2;
-        printf("interrupcion en encoder 2\n");
+        // printf("interrupcion en encoder 2\n");
     }
     // Actualizar el tiempo del último pulso
     last_trigger_time = now;
