@@ -842,8 +842,8 @@ void mover_servos(int estado) {
 
     int servo1_pos = estado / 3 * 45;  // Dividiendo el estado para obtener la posición de servo 1
     int servo2_pos = (estado % 3) * 45;  // Calculando la posición de servo 2
-    process_move_shoulder(servo1_pos);
-    process_move_elbow(servo2_pos);
+    // process_move_shoulder(servo1_pos);
+    // process_move_elbow(servo2_pos);
 
     // Aquí deberías poner el código que mueve físicamente los servos
     // usando los ángulos decodificados (servo1_pos, servo2_pos)

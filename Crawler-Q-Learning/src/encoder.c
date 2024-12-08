@@ -92,8 +92,15 @@ direction_t get_movement_direction() {
 
 float encoder_get_reward(encoder_t *encoder){
     int32_t real_value= (encoder->count)/2;
-    float reward = real_value >= 5 ? 1.0 : (float)real_value / 5.0; //Acotado a 5 como max (rendijas de una vuelta)
-    return reward;
+    printf("interrupciones encoder: %ld \n",encoder->count);
+
+    if (real_value==1){
+        return 0;
+    }
+    else {
+        float reward = real_value >= 5 ? 1.0 : (float)real_value / 5.0; //Acotado a 5 como max (rendijas de una vuelta)
+        return reward;
+    }
 }
 
 float get_reward(encoder_t *encoder1, encoder_t *encoder2){
