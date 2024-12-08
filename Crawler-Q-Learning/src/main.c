@@ -588,13 +588,13 @@ void app_main() {
     while(1){
         
         printf("servo 1 %d grados, servo 2 %d grados\n", pos1, pos2);
-        vTaskDelay(pdMS_TO_TICKS(4000));
+        vTaskDelay(pdMS_TO_TICKS(2000));
         while(pos1!=45){
             if(pos1<45){
                 pos1+=45;
                 process_move_shoulder(pos1);
                 printf("servo 1 %d grados, servo 2 %d grados\n", pos1, pos2);
-                vTaskDelay(pdMS_TO_TICKS(2000));
+                vTaskDelay(pdMS_TO_TICKS(1000));
             }
             // else if(pos1>0){
             //     pos1-=45;
@@ -608,7 +608,7 @@ void app_main() {
                 pos2-=45;
                 process_move_elbow(pos2);
                 printf("servo 1 %d grados, servo 2 %d grados\n", pos1, pos2);
-                vTaskDelay(pdMS_TO_TICKS(2000));
+                vTaskDelay(pdMS_TO_TICKS(1000));
             }
             // else if(pos1>0){
             //     pos1-=45;
@@ -622,7 +622,7 @@ void app_main() {
                 pos1-=45;
                 process_move_shoulder(pos1);
                 printf("servo 1 %d grados, servo 2 %d grados\n", pos1, pos2);
-                vTaskDelay(pdMS_TO_TICKS(2000));
+                vTaskDelay(pdMS_TO_TICKS(1000));
             }
             // else if(pos1>0){
             //     pos1-=45;
@@ -636,7 +636,7 @@ void app_main() {
                 pos2+=45;
                 process_move_elbow(pos2);
                 printf("servo 1 %d grados, servo 2 %d grados\n", pos1, pos2);
-                vTaskDelay(pdMS_TO_TICKS(2000));
+                vTaskDelay(pdMS_TO_TICKS(1000));
             }
             // else if(pos1>0){
             //     pos1-=45;
