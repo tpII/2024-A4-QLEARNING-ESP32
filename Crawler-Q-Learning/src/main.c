@@ -42,7 +42,7 @@
 #define FRONT_LEARN 0 //esta aprendiendo para adelante
 #define BACK_LEARN 1 //esta aprendiendo para atras
 
-#define MAX_INTENTOS 6
+#define MAX_INTENTOS 5
 
 //---------------MAIN ENCODER---------------------
 
