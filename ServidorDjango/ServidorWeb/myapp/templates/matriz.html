@@ -301,7 +301,8 @@
                     // Crear encabezados de columnas (A, B, C, ...)
                     for (let i = 0; i < matriz[0].length; i++) {
                         const th = document.createElement('th');
-                        th.textContent = String.fromCharCode(65 + i); // Convertir índice a letra
+                        // th.textContent = 'A' + String.fromCharCode(filaIndex); //A-
+                        th.textContent = 'A' + (i + 1);  // a1, a2, a3...
                         th.style.backgroundColor = "lightblue"; // Pintar en celeste
                         encabezado.appendChild(th);
                     }
@@ -314,7 +315,8 @@
 
                         // Encabezado de fila (A, B, C, ...)
                         const th = document.createElement('th');
-                        th.textContent = String.fromCharCode(65 + filaIndex); // Convertir índice a letra
+                        // th.textContent = 'S' + String.fromCharCode(65 + filaIndex);  
+                        th.textContent = 'E' + (filaIndex + 1);  // E1, E2, E3...
                         th.style.backgroundColor = "lightblue"; // Pintar en celeste
                         tr.appendChild(th);
 
