@@ -63,7 +63,7 @@ char *response_data = NULL;
 size_t response_data_size = 0;
 int estadoCrawler=-1; //-1 Detenido, 1 Empezado(haciendo algo)
 int estadoAprendiendoEjecutando=-1; //-1 Detenido, 0 Aprendiendo, 1 Ejecutando
-int learn=0; //aprende para adelante (1) o atras (0)
+int learn=FRONT_LEARN; //aprende para adelante (0) o atras (1)
 //------------
 
 // Configura el modo AP del ESP32---------------------------------------
@@ -430,8 +430,6 @@ void app_main(){
         int action = 0;
         int cont = 0;//contador para las iteraciones
         int max_iterations = 100;// Número de iteraciones para el aprendizaje
-        learn = BACK_LEARN; //aprende pa tras
-
         // float inicio = dwalltime();
 
         estadoAprendiendoEjecutando=-1;
@@ -494,7 +492,7 @@ void app_main(){
 
             if(cont*20%100 == 0)
             {
-                agent.epsilon = agent.epsilon * 0.99; // Decaimiento exponencial
+                agent.epsilon = agent.epsilon * 0.99; // decrementa la exploración cada 5 iteraciones
             }
 
             // 8. Controlar el tiempo de ejecución con FreeRTOS
@@ -502,9 +500,9 @@ void app_main(){
             vTaskDelay(pdMS_TO_TICKS(1000));  // Espera de medio segundo entre ciclos de aprendizaje
             estadoCrawler=obtenerEstadoCrawler();
         }
-        learn=obtenerDireccionCrawler();
-
         // 9. Cuando se termine el aprendizaje, podemos salir del bucle
+
+        learn=obtenerDireccionCrawler();
         crawler_listo = true;  // Señalamos que el aprendizaje ha terminado
         enviarDatosMatriz(agent.Q);
         // enviarDatosMatriz(agent.Q);
@@ -623,8 +621,8 @@ void q_agent_init(Q_Agent *agent) {
         }
     }
     agent->epsilon = 0.9; // exploración
-    agent->alpha = 0.5; // tasa de aprendizaje
-    agent->gamma = 0.5; // factor de descuento
+    agent->alpha = 0.3; // tasa de aprendizaje
+    agent->gamma = 0.7; // factor de descuento
 }
 
 
