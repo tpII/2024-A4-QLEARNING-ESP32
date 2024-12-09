@@ -15,10 +15,10 @@
 
 // Definiciones de pulsos para el hombro y el codo
 #define SHOULDER_MAX_PULSE 800
-#define SHOULDER_MID_PULSE 600
+#define SHOULDER_MID_PULSE 650
 #define SHOULDER_MIN_PULSE 400
 
-#define ELBOW_MAX_PULSE 2200
+#define ELBOW_MAX_PULSE 2100
 #define ELBOW_MID_PULSE 1800
 #define ELBOW_MIN_PULSE 1400
 
