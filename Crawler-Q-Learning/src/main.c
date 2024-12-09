@@ -620,9 +620,9 @@ void q_agent_init(Q_Agent *agent) {
             agent->R[i][j] = 0.0f;  // Inicializa la matriz R con ceros
         }
     }
-    agent->epsilon = 0.9; // exploración
-    agent->alpha = 0.3; // tasa de aprendizaje
-    agent->gamma = 0.7; // factor de descuento
+    agent->epsilon = 0.9; // exploración (exploración vs explotación)
+    agent->alpha = 0.5; // tasa de aprendizaje (recompensa inmediata)
+    agent->gamma = 0.7; // factor de descuento (valor medio-alto prioriza el largo plazo)
 }
 
 
