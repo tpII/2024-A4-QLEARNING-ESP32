@@ -61,7 +61,7 @@ char *response_data = NULL;
 size_t response_data_size = 0;
 int estadoCrawler=-1; //-1 Detenido, 1 Empezado(haciendo algo)
 int estadoAprendiendoEjecutando=-1; //-1 Detenido, 0 Aprendiendo, 1 Ejecutando
-int learn=1; //aprende para adelante (1) o atras (0)
+int learn=0; //aprende para adelante (1) o atras (0)
 //------------
 
 // Configura el modo AP del ESP32---------------------------------------
@@ -295,8 +295,6 @@ int obtenerDireccionCrawler(){
     {
         direccion=1;
     }
-    
-
     return direccion;
 }
 
@@ -1007,10 +1005,9 @@ void mover_servos_continuamente(int servo1_initial_position, int servo2_initial_
                     vTaskDelay(pdMS_TO_TICKS(1000));
                 }
             }
-
-        }
         estadoCrawler=obtenerEstadoCrawler();
         enviarEstadoCrawler();
+        }
     }
     else if(learn==BACK_LEARN){
         while (estadoCrawler==1) {
@@ -1083,8 +1080,7 @@ void mover_servos_continuamente(int servo1_initial_position, int servo2_initial_
         enviarEstadoCrawler();
         }
         // printf("Servo 1: %d Servo 2: %d\n", servo1_initial_position, servo2_initial_position);
-
-        vTaskDelay(pdMS_TO_TICKS(2000));
+    vTaskDelay(pdMS_TO_TICKS(2000));
     }
 
     estadoAprendiendoEjecutando=-1;
