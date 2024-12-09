@@ -368,7 +368,7 @@ void tarea_q_learning(void *param) {
 
 // ----------------------------------------------------MAINMAINMAINMAINMAINMAINMAINMAINMAIN--------------------------------------------------
 
-void app_main() {
+void app_main(){
 
     // Inicialización de hardware (Wi-Fi, encoders, etc.)
     init_servo();
@@ -486,9 +486,9 @@ void app_main() {
 
         // 9. Cuando se termine el aprendizaje, podemos salir del bucle
         crawler_listo = true;  // Señalamos que el aprendizaje ha terminado
-            enviarDatosMatriz(agent.Q);
+        enviarDatosMatriz(agent.Q);
         // enviarDatosMatriz(agent.Q);
-    printf("Proceso de aprendizaje completado.\n");
+        printf("Proceso de aprendizaje completado.\n");
 
         estadoAprendiendoEjecutando=-1;
         enviarEstadoCrawler();
@@ -501,11 +501,12 @@ void app_main() {
     // printf("Tiempo total del bucle: %.2f segundos\n", tiempo_total);
     // printf("Tiempo de ejecución sin delay: %.2f segundos\n", tiempo_ejecucion_real);
     //-------------------------------
-    if(learn==FRONT_LEARN){
-        mover_servos_continuamente(45,0);//Ccomienza a moverse segun lo aprendido, a partir de un estado inicial (posiciones de servos)
-    }
-    if(learn==BACK_LEARN){
-        mover_servos_continuamente(0,90);//Ccomienza a moverse segun lo aprendido, a partir de un estado inicial (posiciones de servos)
+        if(learn==FRONT_LEARN){
+            mover_servos_continuamente(45,0);//Ccomienza a moverse segun lo aprendido, a partir de un estado inicial (posiciones de servos)
+        }
+        if(learn==BACK_LEARN){
+            mover_servos_continuamente(0,90);//Ccomienza a moverse segun lo aprendido, a partir de un estado inicial (posiciones de servos)
+        }
     }
 }
 //-----------------------FIN Q-LEARNING--------------------
