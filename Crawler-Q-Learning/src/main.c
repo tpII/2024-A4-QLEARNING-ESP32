@@ -422,12 +422,17 @@ void app_main(){
         estadoAprendiendoEjecutando=-1;
         enviarEstadoCrawler();
         estadoCrawler=obtenerEstadoCrawler();
+
+        //----ACA PODRIA IR EL BOTON DE CAMBIO DE APRENDIZAJE (ATRAS ADELANTE)--
         while(estadoCrawler!=(1)){
             estadoCrawler=obtenerEstadoCrawler();
             vTaskDelay(pdMS_TO_TICKS(1000));
             printf("Esperando a que se presione el botón START en el servidor para comenzar a aprender...\n");
 
         }
+    //----ABOTON DE CAMBIO DE APRENDIZAJE (ATRAS ADELANTE)--
+
+
         estadoAprendiendoEjecutando=0;
         enviarEstadoCrawler();
         while ((estadoCrawler==1)) {
@@ -924,12 +929,17 @@ void mover_servos_continuamente(int servo1_initial_position, int servo2_initial_
     //     vTaskDelay(pdMS_TO_TICKS(2000));
     // }
     estadoCrawler=obtenerEstadoCrawler();
+
+    //----ACA PODRIA IR EL BOTON DE CAMBIO DE APRENDIZAJE (ATRAS ADELANTE)--
+
     while(estadoCrawler!=(1)){
         printf("Esperando a que se presione el botón START para comenzar a ejecutar lo aprendido.--\n");
         vTaskDelay(pdMS_TO_TICKS(1000));
         enviarEstadoCrawler();
         estadoCrawler=obtenerEstadoCrawler();
     }
+    //----ACA PODRIA IR EL BOTON DE CAMBIO DE APRENDIZAJE (ATRAS ADELANTE)--
+
     estadoAprendiendoEjecutando=1;
     enviarEstadoCrawler();
     if(learn==FRONT_LEARN){
