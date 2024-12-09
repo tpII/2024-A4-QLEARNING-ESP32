@@ -217,7 +217,7 @@ int http_get(const char *url)
                 cJSON *start = cJSON_GetObjectItemCaseSensitive(json_response, "start");
                 if (cJSON_IsBool(start))
                 {
-                    estado = cJSON_IsTrue(start) ? 1 : -1; // 1 si es `true`, 0 si es `false`
+                    estado = cJSON_IsTrue(start) ? 1 : -1; // 1 si es `true`, -1 si es `false`
                 }
                 else
                 {
@@ -233,13 +233,13 @@ int http_get(const char *url)
         else
         {
             printf("No se recibió respuesta del servidor.\n");
-            estado=-1;
+            // estado=-1;
         }
     }
     else
     {
         printf("Error en el GET: %s\n", esp_err_to_name(err));
-        estado=-1;
+        // estado=-1;
     }
 
     esp_http_client_cleanup(client);
@@ -491,7 +491,6 @@ void app_main(){
         enviarDatosMatriz(agent.Q);
         // enviarDatosMatriz(agent.Q);
         printf("Proceso de aprendizaje completado.\n");
-
         estadoAprendiendoEjecutando=-1;
         enviarEstadoCrawler();
 
@@ -992,7 +991,6 @@ void mover_servos_continuamente(int servo1_initial_position, int servo2_initial_
         }
         estadoCrawler=obtenerEstadoCrawler();
         enviarEstadoCrawler();
-        vTaskDelay(pdMS_TO_TICKS(2000));
     }
     else if(learn==BACK_LEARN){
         while (estadoCrawler==1) {
@@ -1061,11 +1059,11 @@ void mover_servos_continuamente(int servo1_initial_position, int servo2_initial_
                     vTaskDelay(pdMS_TO_TICKS(1000));
                 }
             }
-
+        estadoCrawler=obtenerEstadoCrawler();
+        enviarEstadoCrawler();
         }
         // printf("Servo 1: %d Servo 2: %d\n", servo1_initial_position, servo2_initial_position);
-        enviarEstadoCrawler();
-        estadoCrawler=obtenerEstadoCrawler();
+
         vTaskDelay(pdMS_TO_TICKS(2000));
     }
 
