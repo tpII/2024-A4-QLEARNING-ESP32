@@ -419,7 +419,7 @@ void app_main(){
 
         // float inicio = dwalltime();
 
-        estadoAprendiendoEjecutando=0;
+        estadoAprendiendoEjecutando=-1;
         enviarEstadoCrawler();
         estadoCrawler=obtenerEstadoCrawler();
         while(estadoCrawler!=(1)){
@@ -428,6 +428,8 @@ void app_main(){
             printf("Esperando a que se presione el botón START en el servidor para comenzar a aprender...\n");
 
         }
+        estadoAprendiendoEjecutando=0;
+        enviarEstadoCrawler();
         while ((estadoCrawler==1)) {
 
             if (xSemaphoreTake(xMutex, portMAX_DELAY)) {
@@ -988,11 +990,9 @@ void mover_servos_continuamente(int servo1_initial_position, int servo2_initial_
             }
 
         }
-        // printf("Servo 1: %d Servo 2: %d\n", servo1_initial_position, servo2_initial_position);
+        estadoCrawler=obtenerEstadoCrawler();
         enviarEstadoCrawler();
         vTaskDelay(pdMS_TO_TICKS(2000));
-        estadoCrawler=obtenerEstadoCrawler();
-
     }
     else if(learn==BACK_LEARN){
         while (estadoCrawler==1) {
@@ -1070,6 +1070,7 @@ void mover_servos_continuamente(int servo1_initial_position, int servo2_initial_
     }
 
     estadoAprendiendoEjecutando=-1;
+    enviarEstadoCrawler();
 }
 
 // float dwalltime()
