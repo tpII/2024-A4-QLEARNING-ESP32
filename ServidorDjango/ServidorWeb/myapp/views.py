@@ -13,12 +13,14 @@ start = False  # Inicialmente apagado
 aprendiendoEjecutando=0 #-1-Detenido, 0-Aprendiendo, 1-Ejecutando
 textoEstadoCrawler="Detenido" #Detenido, Aprendiendo, Ejecutando lo aprendido
 direccionCrawler=0 #Para adelante / 1 Para atras
+startBool=True
 
 
 ##
 import random
 matriz = [[0 for _ in range(9)] for _ in range(9)]  # Matriz 9x9 llena de ceros
 cache.set('matriz_global', matriz)
+cache.set('direccion_crawler',direccionCrawler)
 
 def mostrar_matriz(request):
     matriz = cache.get('matriz_global', [[0 for _ in range(9)] for _ in range(9)])  # Por defecto, una matriz 9x9 de ceros
@@ -119,8 +121,15 @@ def get_estado_crawler(request):
 
 
 def get_direccion_crawler(request):
+    global startBool
     direccionC=cache.get('direccion_crawler')
-    return JsonResponse({'start': direccionC})
+    if (direccionC==0):
+        startBool=True
+    elif (direccionC==1):
+        startBool=False
+
+    return JsonResponse({'start2': direccionC,
+                         'start':startBool})
 
 @csrf_exempt
 def set_direccion_crawler(request):
@@ -129,7 +138,7 @@ def set_direccion_crawler(request):
         print("Modificando direccion del crawler")
         data = json.loads(request.body)
         print("direccion ",data)
-        direccion_crawler = data.get('direccionCrawler', direccionCrawler)
-        cache.set('direccion_crawler',direccion_crawler)
-        return JsonResponse({'status': 'success', 'start': direccionCrawler})
+        print(data.get('start2') )
+        cache.set('direccion_crawler',data.get('start2'))
+        return JsonResponse({'status': 'success', 'start': data.get('start2')})
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)

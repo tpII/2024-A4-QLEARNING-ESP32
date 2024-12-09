@@ -188,7 +188,8 @@
             const responseGet = await fetch('/api/get_direccion_crawler/', { cache: "no-store" });
             if (responseGet.ok) {
                 const data = await responseGet.json();
-                const currentDireccion = data.direccionCrawler;
+                console.log(data);
+                const currentDireccion = data.start2;
                 console.log(`Dirección actual: ${currentDireccion}`);
 
                 // Alterna el valor de la dirección (0 a 1 o 1 a 0)
@@ -201,7 +202,7 @@
                         'X-CSRFToken': '{{ csrf_token }}',
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ start: newDireccion }),
+                    body: JSON.stringify({ start2: newDireccion }),
                     cache: "no-store"
                 });
 

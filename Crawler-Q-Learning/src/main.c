@@ -288,6 +288,14 @@ int obtenerEstadoCrawler(){
 int obtenerDireccionCrawler(){
     printf("Solicitando direccion de la variable direccion...\n");
     int direccion=http_get("http://192.168.4.2:8000/api/get_direccion_crawler/"); //-1 - Detener ...... 1 - Empezar
+    if(direccion==1){
+        direccion=0;
+    }
+    else if (direccion==(-1))
+    {
+        direccion=1;
+    }
+    
 
     return direccion;
 }
