@@ -69,15 +69,44 @@
             margin: 20px auto;
             font-size: 18px;
         }
+        #direccion-button {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 10px 20px;
+        font-size: 16px;
+        color: white;
+        background: #ff5722; /* Naranja brillante */
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        }
+
+        #direccion-button:hover {
+            background: #e64a19; /* Naranja más oscuro */
+        }
+
+        #direccion-button:active {
+            background: #d84315; /* Naranja intenso */
+        }
     </style>
 </head>
 <body>
     <header>
     {% load static %}
     <img src="{% static '/crawler.png' %}" alt="CrawlerBot Logo">
+
     </header>
 
+
     <main>
+        <h1>
+            <div> 
+                <button id="direccion-button" onclick="toggleDireccion()">Dirección</button>
+                <span id="direccion-flecha">↑</span>
+            </div>
+        </h1>
         <h1>Estado: <span id="estado-crawler">{{ estado_crawler }}</span></h1>
         <h1>Matriz Recibida</h1>
         {% if matriz %}
@@ -141,6 +170,70 @@
             console.error("Error de conexión:", error);
         }
     }
+
+    async function toggleDireccion() {
+        try {
+            // Obtén el estado actual
+            const responseGet = await fetch('/api/get_direccion_crawler/', { cache: "no-store" });
+            if (responseGet.ok) {
+                const data = await responseGet.json();
+                const currentDireccion = data.direccionCrawler;
+                console.log(`Dirección actual: ${currentDireccion}`);
+
+                // Alterna el valor de la dirección (0 a 1 o 1 a 0)
+                const newDireccion = currentDireccion === 0 ? 1 : 0;
+
+                // Envía el nuevo valor al servidor
+                const responseSet = await fetch('/api/set_direccion_crawler/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ direccionCrawler: newDireccion }),
+                    cache: "no-store"
+                });
+
+                if (responseSet.ok) {
+                    console.log(`Dirección alternada: ${newDireccion}`);
+                    // Actualiza la flecha solo si el cambio fue exitoso
+                    actualizarFlecha(newDireccion);
+                } else {
+                    console.error("Error al alternar dirección:", responseSet.statusText);
+                }
+            } else {
+                console.error("Error al obtener dirección actual:", responseGet.statusText);
+            }
+        } catch (error) {
+            console.error("Error de conexión:", error);
+        }
+    }
+
+    // Función para actualizar la flecha según la dirección
+    function actualizarFlecha(direccion) {
+        const flecha = document.getElementById('direccion-flecha');
+        flecha.textContent = direccion === 0 ? '↑' : '↓';
+    }
+
+    // Inicializa la flecha al cargar la página
+    async function inicializarFlecha() {
+        try {
+            const response = await fetch('/api/get_direccion_crawler/', { cache: "no-store" });
+            if (response.ok) {
+                const data = await response.json();
+                actualizarFlecha(data.direccionCrawler);
+            } else {
+                console.error("Error al obtener dirección inicial:", response.statusText);
+            }
+        } catch (error) {
+            console.error("Error de conexión:", error);
+        }
+    }
+
+    // Llama a la inicialización al cargar
+    inicializarFlecha();
+
+    
         // Función para actualizar el estado
         async function actualizarEstado() {
             try {
@@ -163,49 +256,62 @@
         
         // Función para actualizar la matriz
         async function actualizarMatriz() {
-            try {
-                const response = await fetch('/api/get_matriz/');
-                if (response.ok) {
-                    const data = await response.json();
-                    const matriz = data.matriz;
+        try {
+            const response = await fetch('/api/get_matriz/');
+            if (response.ok) {
+                const data = await response.json();
+                const matriz = data.matriz;
 
-                    // Actualizar la tabla
-                    const tabla = document.querySelector('table');
-                    if (tabla) {
-                        // Eliminar filas existentes
-                        while (tabla.rows.length > 0) {
-                            tabla.deleteRow(0);
-                        }
-
-                        if(matriz==[]){
-                            for(i=0;i<9;i++){
-                                for(j=0;j<9;j++){
-                                    matriz[i][j]=0;
-                                }
-                            }
-                        }
-
-                        // Crear nuevas filas
-                        matriz.forEach(fila => {
-                            const tr = document.createElement('tr');
-                            fila.forEach(valor => {
-                                const td = document.createElement('td');
-                                td.textContent = valor;
-                                tr.appendChild(td);
-                            });
-                            tabla.appendChild(tr);
-                        });
+                // Actualizar la tabla
+                const tabla = document.querySelector('table');
+                if (tabla) {
+                    // Eliminar filas existentes
+                    while (tabla.rows.length > 0) {
+                        tabla.deleteRow(0);
                     }
-                } else {
-                    console.error("Error al obtener la matriz:", response.statusText);
+
+                    // Crear nuevas filas
+                    matriz.forEach(fila => {
+                        const tr = document.createElement('tr');
+                        fila.forEach(valor => {
+                            const td = document.createElement('td');
+                            td.textContent = valor;
+
+                            // Aplicar color basado en el valor
+                            const color = calcularColor(valor);
+                            td.style.backgroundColor = color;
+
+                            tr.appendChild(td);
+                        });
+                        tabla.appendChild(tr);
+                    });
                 }
-            } catch (error) {
-                console.error("Error de conexión:", error);
+            } else {
+                console.error("Error al obtener la matriz:", response.statusText);
             }
+        } catch (error) {
+            console.error("Error de conexión:", error);
         }
+    }
+    setInterval(actualizarMatriz, 5000);
+    // Función para calcular el color basado en el valor
+    // Función para calcular el color basado en el valor
+    function calcularColor(valor) {
+        if (valor > 0) {
+            // Valores positivos: verdes
+            const opacidad = Math.abs(valor); // Mayor opacidad cuanto más cerca esté de 1
+            return `rgba(0, 255, 0, ${opacidad})`;
+        } else if (valor < 0) {
+            // Valores negativos: rojos
+            const opacidad = Math.abs(valor); // Mayor opacidad cuanto más cerca esté de -1
+            return `rgba(255, 0, 0, ${opacidad})`;
+        } else {
+            // Valor 0: sin color (transparente o blanco)
+            return `rgba(255, 255, 255, 1)`;
+        }
+    }
 
         // Llama a la función cada 5 segundos
-        setInterval(actualizarMatriz, 5000);
 
 
     </script>

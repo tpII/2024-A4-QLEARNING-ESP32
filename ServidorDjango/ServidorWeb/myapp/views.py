@@ -12,8 +12,11 @@ from django.core.cache import cache
 start = False  # Inicialmente apagado
 aprendiendoEjecutando=0 #-1-Detenido, 0-Aprendiendo, 1-Ejecutando
 textoEstadoCrawler="Detenido" #Detenido, Aprendiendo, Ejecutando lo aprendido
+direccionCrawler=0 #Para adelante / 1 Para atras
 
 
+##
+import random
 matriz = [[0 for _ in range(9)] for _ in range(9)]  # Matriz 9x9 llena de ceros
 cache.set('matriz_global', matriz)
 
@@ -108,7 +111,25 @@ def recibir_estado(request):
             return JsonResponse({'status': 'error', 'mensaje': 'JSON inválido'}, status=400)
     else:
         return JsonResponse({'status': 'error', 'mensaje': 'Solo acepta POST requests'}, status=405)
+    
 
 def get_estado_crawler(request):
     estado_crawler = cache.get('estado_crawler', textoEstadoCrawler)
     return JsonResponse({"estado_crawler": estado_crawler})
+
+
+def get_direccion_crawler(request):
+    direccionC=cache.get('direccion_crawler')
+    return JsonResponse({'direccionCrawler': direccionC})
+
+@csrf_exempt
+def set_direccion_crawler(request):
+    global direccion_crawler
+    if request.method == 'POST':
+        print("Modificando direccion del crawler")
+        data = json.loads(request.body)
+        print("direccion ",data)
+        direccion_crawler = data.get('direccionCrawler', direccionCrawler)
+        cache.set('direccion_crawler',direccion_crawler)
+        return JsonResponse({'status': 'success', 'direccionCrawler': direccionCrawler})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
