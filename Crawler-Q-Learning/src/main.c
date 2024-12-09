@@ -285,6 +285,13 @@ int obtenerEstadoCrawler(){
     return estado;
 }
 
+int obtenerDireccionCrawler(){
+    printf("Solicitando direccion de la variable direccion...\n");
+    int direccion=http_get("http://192.168.4.2:8000/api/get_direccion_crawler/"); //-1 - Detener ...... 1 - Empezar
+
+    return direccion;
+}
+
 //AGREGAR A CODIGO FINAL ----------------------------------------------------
 void enviarEstadoCrawler(){
     char buffer[128];
@@ -428,6 +435,7 @@ void app_main(){
             estadoCrawler=obtenerEstadoCrawler();
             vTaskDelay(pdMS_TO_TICKS(1000));
             printf("Esperando a que se presione el botón START en el servidor para comenzar a aprender...\n");
+            learn=obtenerDireccionCrawler();
 
         }
     //----ABOTON DE CAMBIO DE APRENDIZAJE (ATRAS ADELANTE)--
@@ -490,6 +498,7 @@ void app_main(){
             vTaskDelay(pdMS_TO_TICKS(1000));  // Espera de medio segundo entre ciclos de aprendizaje
             estadoCrawler=obtenerEstadoCrawler();
         }
+        learn=obtenerDireccionCrawler();
 
         // 9. Cuando se termine el aprendizaje, podemos salir del bucle
         crawler_listo = true;  // Señalamos que el aprendizaje ha terminado

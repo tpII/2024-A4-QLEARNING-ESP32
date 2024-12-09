@@ -120,7 +120,7 @@ def get_estado_crawler(request):
 
 def get_direccion_crawler(request):
     direccionC=cache.get('direccion_crawler')
-    return JsonResponse({'direccionCrawler': direccionC})
+    return JsonResponse({'start': direccionC})
 
 @csrf_exempt
 def set_direccion_crawler(request):
@@ -131,5 +131,5 @@ def set_direccion_crawler(request):
         print("direccion ",data)
         direccion_crawler = data.get('direccionCrawler', direccionCrawler)
         cache.set('direccion_crawler',direccion_crawler)
-        return JsonResponse({'status': 'success', 'direccionCrawler': direccionCrawler})
+        return JsonResponse({'status': 'success', 'start': direccionCrawler})
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
