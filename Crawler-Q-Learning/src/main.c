@@ -419,7 +419,7 @@ void app_main() {
 
         // float inicio = dwalltime();
 
-            estadoAprendiendoEjecutando=0;
+        estadoAprendiendoEjecutando=0;
         enviarEstadoCrawler();
         estadoCrawler=obtenerEstadoCrawler();
         while(estadoCrawler!=(1)){
@@ -868,12 +868,11 @@ void mover_servos_continuamente(int servo1_initial_position, int servo2_initial_
             }
         }
     }
-
     else if(learn == BACK_LEARN){
         // Encontrar el estado con el menor valor en la matriz Q
         max_q_value = 1e6; // Inicializar con un valor muy alto para encontrar el minimo
 
-        for (int r = 0; r < ROW_NUM; r++) {
+        for(int r = 0; r < ROW_NUM; r++) {
             for (int c = 0; c < COL_NUM; c++) {
                 if (agent.Q[r][c] < max_q_value) {
                     max_q_value = agent.Q[r][c];
@@ -995,7 +994,7 @@ void mover_servos_continuamente(int servo1_initial_position, int servo2_initial_
 
     }
     else if(learn==BACK_LEARN){
-        while (1) {
+        while (estadoCrawler==1) {
             // Movimiento de inicial a mejor posición
             printf("Moviendo hacia la mejor posición...\n");
             while (servo2_initial_position != servo2_best_position) {
@@ -1063,9 +1062,10 @@ void mover_servos_continuamente(int servo1_initial_position, int servo2_initial_
             }
 
         }
-            // printf("Servo 1: %d Servo 2: %d\n", servo1_initial_position, servo2_initial_position);
-            vTaskDelay(pdMS_TO_TICKS(2000));
-
+        // printf("Servo 1: %d Servo 2: %d\n", servo1_initial_position, servo2_initial_position);
+        enviarEstadoCrawler();
+        estadoCrawler=obtenerEstadoCrawler();
+        vTaskDelay(pdMS_TO_TICKS(2000));
     }
 
     estadoAprendiendoEjecutando=-1;
