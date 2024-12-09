@@ -42,6 +42,8 @@
 #define FRONT_LEARN 0 //esta aprendiendo para adelante
 #define BACK_LEARN 1 //esta aprendiendo para atras
 
+#define MAX_INTENTOS 6
+
 //---------------MAIN ENCODER---------------------
 
 // Configuración del AP
@@ -482,10 +484,10 @@ void app_main(){
             // 7. Mostrar la matriz Q para depuración (opcional)
             //print_q_matrix(&agent);
 
-            if(cont*20%100 == 0)
-            {
+            // if(cont*20%100 == 0)
+            // {
                 enviarDatosMatriz(agent.Q);
-            }
+            // }
 
             // Incrementar el contador de iteraciones
             cont++;
@@ -870,6 +872,7 @@ void simu_encoder_signal(Q_Agent *agent, int state, int next_state) {
 
 void mover_servos_continuamente(int servo1_initial_position, int servo2_initial_position) {
 
+    int intentos = 0;//variable para contar los intentos de ejecución de lo aprendido
     int best_state = 0;
     float max_q_value = 0;
 
@@ -910,212 +913,217 @@ void mover_servos_continuamente(int servo1_initial_position, int servo2_initial_
     //        servo1_initial_position, servo2_initial_position,
     //        servo1_best_position, servo2_best_position);
 
-    // inicia en pos inicial
-    printf("Iniciando en posición inicial...\n");
-    process_move_elbow(45);//lo mismo de arriba
-    vTaskDelay(pdMS_TO_TICKS(1000));
-    process_move_elbow(servo2_initial_position);
-    vTaskDelay(pdMS_TO_TICKS(1000));
-    process_move_shoulder(45);//para que el movimiento no sea de golpe (ya que no se lleva registro de donde esta el brazo en ese momento)
-    vTaskDelay(pdMS_TO_TICKS(1000));
-    process_move_shoulder(servo1_initial_position);
-    // while (servo1_initial_position != 45 || servo2_initial_position != 0) {
-    //     if (servo1_initial_position > 45) {
-    //         servo1_initial_position -= 45; // Decrementar hacia la posición inicial
-    //         process_move_shoulder(servo1_initial_position);
-    //         vTaskDelay(pdMS_TO_TICKS(1000));
-    //     } 
-    //     else if (servo1_initial_position < 45) {
-    //         servo1_initial_position += 45; // Incrementar hacia la posición inicial
-    //         process_move_shoulder(servo1_initial_position);
-    //         vTaskDelay(pdMS_TO_TICKS(1000));
-    //     }
-
-    //     if (servo2_initial_position > 0) {
-    //         servo2_initial_position -= 45; // Decrementar hacia la posición inicial
-    //         process_move_elbow(servo2_initial_position);
-    //         vTaskDelay(pdMS_TO_TICKS(1000));
-    //     } 
-    //     else if (servo2_initial_position < 0) {
-    //         servo2_initial_position += 45; // Incrementar hacia la posición inicial
-    //         process_move_elbow(servo2_initial_position);
-    //         vTaskDelay(pdMS_TO_TICKS(1000));
-    //     }
-    //     printf("Servo 1: %d Servo 2: %d\n", servo1_initial_position, servo2_initial_position);
-    //     vTaskDelay(pdMS_TO_TICKS(2000));
-    // }
-    estadoCrawler=obtenerEstadoCrawler();
-
-    while(estadoCrawler!=(1)){
-        estadoCrawler=obtenerEstadoCrawler();
-        learn=obtenerDireccionCrawler();
-        printf("Esperando a que se presione el botón START en el servidor para comenzar a aprender...\n");
+    while(intentos<MAX_INTENTOS){
+        // inicia en pos inicial
+        printf("Iniciando en posición inicial...\n");
         vTaskDelay(pdMS_TO_TICKS(1000));
-    }
+        process_move_elbow(45);//lo mismo de arriba
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        process_move_elbow(servo2_initial_position);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        process_move_shoulder(45);//para que el movimiento no sea de golpe (ya que no se lleva registro de donde esta el brazo en ese momento)
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        process_move_shoulder(servo1_initial_position);
+        // while (servo1_initial_position != 45 || servo2_initial_position != 0) {
+        //     if (servo1_initial_position > 45) {
+        //         servo1_initial_position -= 45; // Decrementar hacia la posición inicial
+        //         process_move_shoulder(servo1_initial_position);
+        //         vTaskDelay(pdMS_TO_TICKS(1000));
+        //     } 
+        //     else if (servo1_initial_position < 45) {
+        //         servo1_initial_position += 45; // Incrementar hacia la posición inicial
+        //         process_move_shoulder(servo1_initial_position);
+        //         vTaskDelay(pdMS_TO_TICKS(1000));
+        //     }
 
-    estadoAprendiendoEjecutando=1;
-    enviarEstadoCrawler();
-    if(learn==FRONT_LEARN){
-        while (estadoCrawler==1) {
-            // Movimiento de inicial a mejor posición
-            printf("Moviendo hacia la mejor posición...\n");
-            while (servo1_initial_position != servo1_best_position) {
-                if (servo1_initial_position < servo1_best_position) {
-                    servo1_initial_position += 45; // Incrementar hacia la mejor posición
-                    process_move_shoulder(servo1_initial_position);
-                    vTaskDelay(pdMS_TO_TICKS(1000));
-                } else if (servo1_initial_position > servo1_best_position) {
-                    servo1_initial_position -= 45; // Decrementar hacia la mejor posición
-                    process_move_shoulder(servo1_initial_position);
-                    vTaskDelay(pdMS_TO_TICKS(1000));
+        //     if (servo2_initial_position > 0) {
+        //         servo2_initial_position -= 45; // Decrementar hacia la posición inicial
+        //         process_move_elbow(servo2_initial_position);
+        //         vTaskDelay(pdMS_TO_TICKS(1000));
+        //     } 
+        //     else if (servo2_initial_position < 0) {
+        //         servo2_initial_position += 45; // Incrementar hacia la posición inicial
+        //         process_move_elbow(servo2_initial_position);
+        //         vTaskDelay(pdMS_TO_TICKS(1000));
+        //     }
+        //     printf("Servo 1: %d Servo 2: %d\n", servo1_initial_position, servo2_initial_position);
+        //     vTaskDelay(pdMS_TO_TICKS(2000));
+        // }
+        estadoCrawler=obtenerEstadoCrawler();
+
+        while(estadoCrawler!=(1)){
+            estadoCrawler=obtenerEstadoCrawler();
+            learn=obtenerDireccionCrawler();
+            printf("Esperando a que se presione el botón START en el servidor para comenzar a aprender...\n");
+            vTaskDelay(pdMS_TO_TICKS(1000));
+        }
+
+        estadoAprendiendoEjecutando=1;
+        enviarEstadoCrawler();
+        if(learn==FRONT_LEARN){
+            while (estadoCrawler==1) {
+                // Movimiento de inicial a mejor posición
+                printf("Moviendo hacia la mejor posición...\n");
+                while (servo1_initial_position != servo1_best_position) {
+                    if (servo1_initial_position < servo1_best_position) {
+                        servo1_initial_position += 45; // Incrementar hacia la mejor posición
+                        process_move_shoulder(servo1_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    } else if (servo1_initial_position > servo1_best_position) {
+                        servo1_initial_position -= 45; // Decrementar hacia la mejor posición
+                        process_move_shoulder(servo1_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    }
                 }
+                while(servo2_initial_position != servo2_best_position){
+                    if (servo2_initial_position < servo2_best_position) {
+                        servo2_initial_position += 45; // Incrementar hacia la mejor posición
+                        process_move_elbow(servo2_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    } else if (servo2_initial_position > servo2_best_position) {
+                        servo2_initial_position -= 45; // Decrementar hacia la mejor posición
+                        process_move_elbow(servo2_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    }
+                }
+                // printf("Servo 1: %d Servo 2: %d\n", servo1_initial_position, servo2_initial_position);
+                // Simular tiempo de movimiento
+                vTaskDelay(pdMS_TO_TICKS(2000));
+                if(estadoCrawler!=1) break;
+                printf("Moviendo de regreso a la posición inicial...\n");
+                while (servo1_initial_position != 45) {
+                    if (servo1_initial_position > 45) {
+                        servo1_initial_position -= 45; // Decrementar hacia la posición inicial
+                        process_move_shoulder(servo1_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    } 
+                    else if (servo1_initial_position < 45) {
+                        servo1_initial_position += 45; // Incrementar hacia la posición inicial
+                        process_move_shoulder(servo1_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    }
+                }
+                while(servo2_initial_position != 0){
+                    if (servo2_initial_position > 0) {
+                        servo2_initial_position -= 45; // Decrementar hacia la posición inicial
+                        process_move_elbow(servo2_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    } 
+                    else if (servo2_initial_position < 0) {
+                        servo2_initial_position += 45; // Incrementar hacia la posición inicial
+                        process_move_elbow(servo2_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    }
+                }
+            estadoCrawler=obtenerEstadoCrawler();
+            enviarEstadoCrawler();
             }
-            while(servo2_initial_position != servo2_best_position){
-                if (servo2_initial_position < servo2_best_position) {
-                    servo2_initial_position += 45; // Incrementar hacia la mejor posición
-                    process_move_elbow(servo2_initial_position);
-                    vTaskDelay(pdMS_TO_TICKS(1000));
-                } else if (servo2_initial_position > servo2_best_position) {
-                    servo2_initial_position -= 45; // Decrementar hacia la mejor posición
-                    process_move_elbow(servo2_initial_position);
-                    vTaskDelay(pdMS_TO_TICKS(1000));
+        }
+        else if(learn==BACK_LEARN){
+            while (estadoCrawler==1) {
+                // Movimiento de inicial a mejor posición
+                printf("Moviendo hacia la mejor posición...\n");
+                while (servo2_initial_position != servo2_best_position) {
+                    if (servo2_initial_position < servo2_best_position) {
+                        servo2_initial_position += 45; // Incrementar hacia la mejor posición
+                        process_move_elbow(servo2_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    } else if (servo2_initial_position > servo2_best_position) {
+                        servo2_initial_position -= 45; // Decrementar hacia la mejor posición
+                        process_move_elbow(servo2_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    }
                 }
+                while(servo1_initial_position != servo1_best_position){
+                    if (servo1_initial_position < servo1_best_position) {
+                        servo1_initial_position += 45; // Incrementar hacia la mejor posición
+                        process_move_shoulder(servo1_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    } else if (servo1_initial_position > servo1_best_position) {
+                        servo1_initial_position -= 45; // Decrementar hacia la mejor posición
+                        process_move_shoulder(servo1_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    }
+                }
+                // printf("Servo 1: %d Servo 2: %d\n", servo1_initial_position, servo2_initial_position);
+                // Simular tiempo de movimiento
+                vTaskDelay(pdMS_TO_TICKS(2000));
+                if(estadoCrawler!=1) break;
+                printf("Moviendo de regreso a la posición inicial...\n");
+                while (servo1_initial_position != 90) {
+                    if (servo1_initial_position > 90) {
+                        servo1_initial_position -= 45; // Decrementar hacia la posición inicial
+                        process_move_shoulder(servo1_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    } 
+                    else if (servo1_initial_position < 90) {
+                        servo1_initial_position += 45; // Incrementar hacia la posición inicial
+                        process_move_shoulder(servo1_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    }
+                }
+                while (servo2_initial_position != 90) {
+                    if (servo2_initial_position > 90) {
+                        servo2_initial_position -= 45; // Decrementar hacia la posición inicial
+                        process_move_elbow(servo2_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    } 
+                    else if (servo2_initial_position < 90) {
+                        servo2_initial_position += 45; // Incrementar hacia la posición inicial
+                        process_move_elbow(servo2_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    }
+                }
+                if(estadoCrawler!=1) break;
+                while(servo1_initial_position != 0){
+                    if (servo1_initial_position > 0) {
+                        servo1_initial_position -= 45; // Decrementar hacia la posición inicial
+                        process_move_shoulder(servo1_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    } 
+                    else if (servo1_initial_position < 0) {
+                        servo1_initial_position += 45; // Incrementar hacia la posición inicial
+                        process_move_shoulder(servo1_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    }
+                }
+            estadoCrawler=obtenerEstadoCrawler();
+            enviarEstadoCrawler();
             }
             // printf("Servo 1: %d Servo 2: %d\n", servo1_initial_position, servo2_initial_position);
-            // Simular tiempo de movimiento
-            vTaskDelay(pdMS_TO_TICKS(2000));
-            if(estadoCrawler!=1) break;
-            printf("Moviendo de regreso a la posición inicial...\n");
-            while (servo1_initial_position != 45) {
-                if (servo1_initial_position > 45) {
-                    servo1_initial_position -= 45; // Decrementar hacia la posición inicial
-                    process_move_shoulder(servo1_initial_position);
-                    vTaskDelay(pdMS_TO_TICKS(1000));
-                } 
-                else if (servo1_initial_position < 45) {
-                    servo1_initial_position += 45; // Incrementar hacia la posición inicial
-                    process_move_shoulder(servo1_initial_position);
-                    vTaskDelay(pdMS_TO_TICKS(1000));
-                }
-            }
-            while(servo2_initial_position != 0){
-                if (servo2_initial_position > 0) {
-                    servo2_initial_position -= 45; // Decrementar hacia la posición inicial
-                    process_move_elbow(servo2_initial_position);
-                    vTaskDelay(pdMS_TO_TICKS(1000));
-                } 
-                else if (servo2_initial_position < 0) {
-                    servo2_initial_position += 45; // Incrementar hacia la posición inicial
-                    process_move_elbow(servo2_initial_position);
-                    vTaskDelay(pdMS_TO_TICKS(1000));
-                }
-            }
-        estadoCrawler=obtenerEstadoCrawler();
-        enviarEstadoCrawler();
+        vTaskDelay(pdMS_TO_TICKS(2000));
         }
-    }
-    else if(learn==BACK_LEARN){
-        while (estadoCrawler==1) {
-            // Movimiento de inicial a mejor posición
-            printf("Moviendo hacia la mejor posición...\n");
-            while (servo2_initial_position != servo2_best_position) {
-                if (servo2_initial_position < servo2_best_position) {
-                    servo2_initial_position += 45; // Incrementar hacia la mejor posición
-                    process_move_elbow(servo2_initial_position);
-                    vTaskDelay(pdMS_TO_TICKS(1000));
-                } else if (servo2_initial_position > servo2_best_position) {
-                    servo2_initial_position -= 45; // Decrementar hacia la mejor posición
-                    process_move_elbow(servo2_initial_position);
-                    vTaskDelay(pdMS_TO_TICKS(1000));
-                }
-            }
-            while(servo1_initial_position != servo1_best_position){
-                if (servo1_initial_position < servo1_best_position) {
-                    servo1_initial_position += 45; // Incrementar hacia la mejor posición
-                    process_move_shoulder(servo1_initial_position);
-                    vTaskDelay(pdMS_TO_TICKS(1000));
-                } else if (servo1_initial_position > servo1_best_position) {
-                    servo1_initial_position -= 45; // Decrementar hacia la mejor posición
-                    process_move_shoulder(servo1_initial_position);
-                    vTaskDelay(pdMS_TO_TICKS(1000));
-                }
-            }
-            // printf("Servo 1: %d Servo 2: %d\n", servo1_initial_position, servo2_initial_position);
-            // Simular tiempo de movimiento
-            vTaskDelay(pdMS_TO_TICKS(2000));
-            if(estadoCrawler!=1) break;
-            printf("Moviendo de regreso a la posición inicial...\n");
-            while (servo1_initial_position != 90) {
-                if (servo1_initial_position > 90) {
-                    servo1_initial_position -= 45; // Decrementar hacia la posición inicial
-                    process_move_shoulder(servo1_initial_position);
-                    vTaskDelay(pdMS_TO_TICKS(1000));
-                } 
-                else if (servo1_initial_position < 90) {
-                    servo1_initial_position += 45; // Incrementar hacia la posición inicial
-                    process_move_shoulder(servo1_initial_position);
-                    vTaskDelay(pdMS_TO_TICKS(1000));
-                }
-            }
-            while (servo2_initial_position != 90) {
-                if (servo2_initial_position > 90) {
-                    servo2_initial_position -= 45; // Decrementar hacia la posición inicial
-                    process_move_elbow(servo2_initial_position);
-                    vTaskDelay(pdMS_TO_TICKS(1000));
-                } 
-                else if (servo2_initial_position < 90) {
-                    servo2_initial_position += 45; // Incrementar hacia la posición inicial
-                    process_move_elbow(servo2_initial_position);
-                    vTaskDelay(pdMS_TO_TICKS(1000));
-                }
-            }
-            if(estadoCrawler!=1) break;
-            while(servo1_initial_position != 0){
-                if (servo1_initial_position > 0) {
-                    servo1_initial_position -= 45; // Decrementar hacia la posición inicial
-                    process_move_shoulder(servo1_initial_position);
-                    vTaskDelay(pdMS_TO_TICKS(1000));
-                } 
-                else if (servo1_initial_position < 0) {
-                    servo1_initial_position += 45; // Incrementar hacia la posición inicial
-                    process_move_shoulder(servo1_initial_position);
-                    vTaskDelay(pdMS_TO_TICKS(1000));
-                }
-            }
-        estadoCrawler=obtenerEstadoCrawler();
-        enviarEstadoCrawler();
-        }
-        // printf("Servo 1: %d Servo 2: %d\n", servo1_initial_position, servo2_initial_position);
-    vTaskDelay(pdMS_TO_TICKS(2000));
-    }
 
-    estadoAprendiendoEjecutando=-1;
-    enviarEstadoCrawler();
+        estadoAprendiendoEjecutando=-1;
+        enviarEstadoCrawler();
 
-    printf("Moviendo a la posición inicial...\n");
-    while (servo1_initial_position != 45) {
-        if (servo1_initial_position > 45) {
-            servo1_initial_position -= 45; // Decrementar hacia la posición inicial
-            process_move_shoulder(servo1_initial_position);
-            vTaskDelay(pdMS_TO_TICKS(1000));
-        } 
-        else if (servo1_initial_position < 45) {
-            servo1_initial_position += 45; // Incrementar hacia la posición inicial
-            process_move_shoulder(servo1_initial_position);
-            vTaskDelay(pdMS_TO_TICKS(1000));
+        printf("Moviendo a la posición inicial...\n");
+        while (servo1_initial_position != 45) {
+            if (servo1_initial_position > 45) {
+                servo1_initial_position -= 45; // Decrementar hacia la posición inicial
+                process_move_shoulder(servo1_initial_position);
+                vTaskDelay(pdMS_TO_TICKS(1000));
+            } 
+            else if (servo1_initial_position < 45) {
+                servo1_initial_position += 45; // Incrementar hacia la posición inicial
+                process_move_shoulder(servo1_initial_position);
+                vTaskDelay(pdMS_TO_TICKS(1000));
+            }
         }
-    }
-    while (servo2_initial_position != 0) {
-        if (servo2_initial_position > 0) {
-            servo2_initial_position -= 45; // Decrementar hacia la posición inicial
-            process_move_elbow(servo2_initial_position);
-            vTaskDelay(pdMS_TO_TICKS(1000));
-        } 
-        else if (servo2_initial_position < 0) {
-            servo2_initial_position += 45; // Incrementar hacia la posición inicial
-            process_move_elbow(servo2_initial_position);
-            vTaskDelay(pdMS_TO_TICKS(1000));
+        while (servo2_initial_position != 0) {
+            if (servo2_initial_position > 0) {
+                servo2_initial_position -= 45; // Decrementar hacia la posición inicial
+                process_move_elbow(servo2_initial_position);
+                vTaskDelay(pdMS_TO_TICKS(1000));
+            } 
+            else if (servo2_initial_position < 0) {
+                servo2_initial_position += 45; // Incrementar hacia la posición inicial
+                process_move_elbow(servo2_initial_position);
+                vTaskDelay(pdMS_TO_TICKS(1000));
+            }
         }
+
+    intentos++;
     }
 
 }
