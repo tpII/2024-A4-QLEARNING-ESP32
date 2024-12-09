@@ -289,9 +289,35 @@
                         tabla.deleteRow(0);
                     }
 
-                    // Crear nuevas filas
-                    matriz.forEach(fila => {
+                    // Crear encabezado de columnas
+                    const encabezado = document.createElement('tr');
+
+                    // Celda vacía en la esquina superior izquierda
+                    const celdaVacia = document.createElement('th');
+                    celdaVacia.style.backgroundColor = "lightblue"; // Pintar en celeste
+                    encabezado.appendChild(celdaVacia);
+
+                    // Crear encabezados de columnas (A, B, C, ...)
+                    for (let i = 0; i < matriz[0].length; i++) {
+                        const th = document.createElement('th');
+                        th.textContent = String.fromCharCode(65 + i); // Convertir índice a letra
+                        th.style.backgroundColor = "lightblue"; // Pintar en celeste
+                        encabezado.appendChild(th);
+                    }
+
+                    tabla.appendChild(encabezado);
+
+                    // Crear nuevas filas con encabezados de fila
+                    matriz.forEach((fila, filaIndex) => {
                         const tr = document.createElement('tr');
+
+                        // Encabezado de fila (A, B, C, ...)
+                        const th = document.createElement('th');
+                        th.textContent = String.fromCharCode(65 + filaIndex); // Convertir índice a letra
+                        th.style.backgroundColor = "lightblue"; // Pintar en celeste
+                        tr.appendChild(th);
+
+                        // Crear celdas de la fila
                         fila.forEach(valor => {
                             const td = document.createElement('td');
                             td.textContent = valor;
@@ -302,6 +328,7 @@
 
                             tr.appendChild(td);
                         });
+
                         tabla.appendChild(tr);
                     });
                 }
