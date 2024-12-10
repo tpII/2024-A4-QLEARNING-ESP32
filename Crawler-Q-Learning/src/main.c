@@ -473,7 +473,7 @@ void print_r_matrix(Q_Agent *agent) {
 
 /***********************************************************/
 
-// Función para mover los servos según el estado
+// Función de simulación para mover los servos según el estado
 void simu_mover_servos(int estado, int accion)
 {
     int servo1_pos = estado / 3 * 45;  // Dividiendo el estado para obtener la posición de servo 1
