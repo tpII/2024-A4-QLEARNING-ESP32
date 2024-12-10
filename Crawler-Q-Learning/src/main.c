@@ -1,70 +1,21 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "esp_system.h"
+#include <main.h>
 
-#include "servo.h"
-#include "encoder.h"
-#include "esp_wifi.h"
-#include "esp_event.h"
-#include "nvs_flash.h"
-#include "esp_http_client.h"
-#include "driver/uart.h"
-#include "esp_task_wdt.h"
+Q_Agent agent; // Instancia del agente Q-Learning
 
-#include "cJSON.h" // Librería para procesar JSON (incluida en ESP-IDF)
+/***********************************************************/
 
+//Inicialización de variables globales
 
-//---------CORRECCIONES FUTURAS----------
-/*
--establecer estados para no tener que hacer
-    int next_state = (servo1_new_position / 45) + (servo2_new_position / 45) * 3;
-*/
-
-#define ROW_NUM 9 // 9 estados (3 posiciones para servo1 y 3 para servo2)
-#define COL_NUM 9 // 9 estados (3 posiciones para servo1 y 3 para servo2)
-
-#define SERVO_NUM 2 // Dos servos
-#define MAX_POSITION 90 // máxima posición (grados)
-#define MIN_POSITION 0
-
-#define NUM_ESTADOS 9
-#define ACT_NUM 4 // 2 acciones por cada servo: +45 -45
-
-//estan al cuete por ahora
-#define ACTION_SERVO1_FORWARD 0  // Mover servo 1 hacia adelante
-#define ACTION_SERVO1_BACKWARD 1  // Mover servo 1 hacia atras
-#define ACTION_SERVO2_FORWARD 2 // Mover servo 2 hacia adelante
-#define ACTION_SERVO2_BACKWARD 3 // Mover servo 2 hacia atras
-
-#define FRONT_LEARN 0 //esta aprendiendo para adelante
-#define BACK_LEARN 1 //esta aprendiendo para atras
-
-#define MAX_INTENTOS 5
-
-//---------------MAIN ENCODER---------------------
-
-// Configuración del AP
-#define AP_SSID "MiESP32_AP"
-#define AP_PASSWORD "123456789"
-#define MAX_STA_CONN 4
-#define TAG "HTTP_GET"
-
-//encoder_t encoder1, encoder2;  // Instancias de los dos encoders
-encoder_t encoder1;
-encoder_t encoder2;
-
-SemaphoreHandle_t xMutex = NULL;
-
-//agregar a codigo final------------------
 char *response_data = NULL;
 size_t response_data_size = 0;
 int estadoCrawler=-1; //-1 Detenido, 1 Empezado(haciendo algo)
 int estadoAprendiendoEjecutando=-1; //-1 Detenido, 0 Aprendiendo, 1 Ejecutando
 int learn=FRONT_LEARN; //aprende para adelante (0) o atras (1)
-//------------
+encoder_t encoder1; // Definición de encoder1
+encoder_t encoder2; // Definición de encoder2
+SemaphoreHandle_t xMutex; // Definición de xMutex
+
+/***********************************************************/
 
 // Configura el modo AP del ESP32---------------------------------------
 void wifi_init_softap() {
@@ -96,6 +47,8 @@ void wifi_init_softap() {
     printf("Punto de acceso inicializado: SSID:%s\n", AP_SSID);
 }
 
+/***********************************************************/
+
 // Maneja eventos HTTP-------------------------------------
 
 esp_err_t http_event_handler(esp_http_client_event_t *evt) {
@@ -104,6 +57,8 @@ esp_err_t http_event_handler(esp_http_client_event_t *evt) {
     }
     return ESP_OK;
 }
+
+/***********************************************************/
 
 // Enviar una solicitud HTTP POST---------------------------
 
@@ -128,8 +83,10 @@ void http_post(const char *url, const char *post_data) {
     esp_http_client_cleanup(client);
 }
 
+/***********************************************************/
+
 // Función para manejar la respuesta del GET
-//NUEVO HTTP, AGREGAR A CODIGO FINAL -------------------------------------------------------------------
+
 int process_get_response(const char *response) {
     // Parsear el JSON
     cJSON *json = cJSON_Parse(response);
@@ -156,9 +113,10 @@ int process_get_response(const char *response) {
     return respuesta;
 }
 
-//NUEVO HTTP, AGREGAR A CODIGO FINAL -------------------------------------------------------------------
-// Método HTTP GET mejorado
+/***********************************************************/
+
 // Método HTTP GET con soporte JSON
+
 esp_err_t client_event_get_handler(esp_http_client_event_handle_t evt)
 {
     switch (evt->event_id)
@@ -185,7 +143,9 @@ esp_err_t client_event_get_handler(esp_http_client_event_handle_t evt)
     return ESP_OK;
 }
 
+/***********************************************************/
 
+// Método HTTP GET con soporte JSON
 int http_get(const char *url)
 {
     esp_http_client_config_t config = {
@@ -248,9 +208,9 @@ int http_get(const char *url)
     return estado;
 }
 
+/***********************************************************/
 
-//envia datos de la matriz al servidor-----------------
-
+//Envia datos de la matriz al servidor
 void enviarDatosMatriz(float matriz[9][9]) {
     char buffer[1024]; // Buffer para el string JSON
     int offset = 0;    // Offset para ir escribiendo en el buffer
@@ -279,14 +239,18 @@ void enviarDatosMatriz(float matriz[9][9]) {
     http_post("http://192.168.4.2:8000/api/recibir_dato/", buffer);
 }
 
+/***********************************************************/
 
-//AGREGAR CODIGO -------------------------------------------------
+//Obtiene el estado del boton start
 int obtenerEstadoCrawler(){
     printf("Solicitando estado de la variable start...\n");
     int estado=http_get("http://192.168.4.2:8000/get_start_state/"); //-1 - Detener ...... 1 - Empezar
     return estado;
 }
 
+/***********************************************************/
+
+//Obtiene la dirección de la variable direccion
 int obtenerDireccionCrawler(){
     printf("Solicitando direccion de la variable direccion...\n");
     int direccion=http_get("http://192.168.4.2:8000/api/get_direccion_crawler/"); //-1 - Detener ...... 1 - Empezar
@@ -300,7 +264,9 @@ int obtenerDireccionCrawler(){
     return direccion;
 }
 
-//AGREGAR A CODIGO FINAL ----------------------------------------------------
+/***********************************************************/
+
+//Envia el estado del crawler
 void enviarEstadoCrawler(){
     char buffer[128];
     int length = snprintf(buffer, sizeof(buffer), "{ \"estado\": %d }", estadoAprendiendoEjecutando);
@@ -313,77 +279,533 @@ void enviarEstadoCrawler(){
     http_post("http://192.168.4.2:8000/api/recibir_estado/", buffer);
 }
 
+/***********************************************************/
 
-//-------------FIN MAIN ENCODER-------------------------------------------------------
+// Variable que indica si el aprendizaje ha finalizado
+bool crawler_listo = false; 
 
-
-
-//-----------------------------------Estructuras y Definición de Matrices------------------
-
-encoder_t encoder1, encoder2;  // Instancias de los dos encoders
-
-typedef struct {
-    float Q[NUM_ESTADOS][NUM_ESTADOS]; // Matriz Q para estados y transiciones
-    float R[NUM_ESTADOS][NUM_ESTADOS]; // Matriz R para recompensas
-    float epsilon; // Tasa de exploración
-    float alpha;   // Tasa de aprendizaje
-    float gamma;   // Factor de descuento
-
-} Q_Agent;
-
-Q_Agent agent;
+/****************************************************************************************/
+/************ FIN DE DECLARACIÓN DE FUNCIONES QUE TRABAJAN CON EL SERVIDOR **************/
+/****************************************************************************************/
 
 
-//-----------------------------------------------------
+/***************** FUNCIONES PARA EL ALGORTIRMO DE APRENDIZAJE Q ************************/
 
-
-bool crawler_listo = false; // Indica si el aprendizaje ha finalizado
-
-// definición de funciones
-void q_agent_init(Q_Agent *agent);
-int q_agent_select_action(Q_Agent *agent, int state);
-void q_agent_update(Q_Agent *agent, int state, int action, int next_state);
-void mover_servos(int nest_state);
-void encoder_signal(Q_Agent *, int,  int,  encoder_t *, encoder_t *); // simula la señal del encoder
-void print_q_matrix(Q_Agent *agent); // Nueva función para imprimir la matriz Q
-void print_r_matrix(Q_Agent *agent);
-void mover_servos_continuamente(int servo1_initial_position, int servo2_initial_position); // Nueva función para el movimiento continuo de arrastre
-void simu_mover_servos(int next_state, int accion);
-void simu_encoder_signal(Q_Agent *agent, int current_state, int next_state);
-int obtener_siguiente_estado(int current_state, int action);
-bool accion_valida(int current_state, int action);
-
-
-// Proceso de aprendizaje----------------------------------------------------HILO APRENDIZAJE--------------------------------------------------
-
-void tarea_q_learning(void *param) {
+// Función para transformar el par de ángulos en un estado
+int get_estado(int servo1_pos, int servo2_pos) {
+    int estado = 0;
+    if (servo1_pos == 45) estado += 3;
+    if (servo1_pos == 90) estado += 6;
+    if (servo2_pos == 45) estado += 1;
+    if (servo2_pos == 90) estado += 2;
+    return estado;
 }
 
-//---------------------------------------------------------------------FIN APRENDIZAJE-------------------------------------------------------------
+/***********************************************************/
 
-// Proceso de aprendizaje----------------------------------------------------HILO WIFI--------------------------------------------------
+// Función para obtener las acciones válidas basadas en las posiciones de los servos
+int* get_valid_actions(int servo1_pos, int servo2_pos, int* size) {
+    static int valid_actions[4]; // Array estático para almacenar las acciones válidas
+    int action_count = 0;
 
-// void tarea_http_wifi(void *param) {
+    // Verificar si se puede mover el servo 1 hacia arriba (sumar 45 grados)
+    if (servo1_pos + 45 <= MAX_POSITION) {
+        valid_actions[action_count++] = ACTION_SERVO1_FORWARD;
+    }
 
-//     // Configuración de Wi-Fi
-//     wifi_init_softap();
-//     esp_task_wdt_deinit();
-//     while (1) {
-//         // Aquí podrías hacer solicitudes HTTP o esperar para recibir peticiones
-//         // int estado = obtenerEstadoCrawler();
-//         // if (estado == 1) {
-//         //     // Procesar si se solicita que empiece el aprendizaje
-//         //     printf("Inicio de aprendizaje.\n");
-//         //     vTaskDelay(pdMS_TO_TICKS(1000));
-//         // }
-//         enviarDatosMatriz(agent.Q);
-//         vTaskDelay(pdMS_TO_TICKS(5000));  // Esperar entre consultas
-//     }
-// }
+    // Verificar si se puede mover el servo 1 hacia abajo (restar 45 grados)
+    if (servo1_pos - 45 >= MIN_POSITION) {
+        valid_actions[action_count++] = ACTION_SERVO1_BACKWARD;
+    }
 
-// ----------------------------------------------------MAINMAINMAINMAINMAINMAINMAINMAINMAIN--------------------------------------------------
+    // Verificar si se puede mover el servo 2 hacia arriba (sumar 45 grados)
+    if (servo2_pos + 45 <= MAX_POSITION) {
+        valid_actions[action_count++] = ACTION_SERVO2_FORWARD;
+    }
 
-void app_main(){
+    // Verificar si se puede mover el servo 2 hacia abajo (restar 45 grados)
+    if (servo2_pos - 45 >= MIN_POSITION) {
+        valid_actions[action_count++] = ACTION_SERVO2_BACKWARD;
+    }
+
+    *size = sizeof(valid_actions)/sizeof(valid_actions[0]);
+
+    return valid_actions;  // Devuelve las acciones válidas
+}
+
+
+/***********************************************************/
+
+// Función para inicializar las matrices Q y R
+void q_agent_init(Q_Agent *agent) {
+    for (int i = 0; i < NUM_ESTADOS; i++) {
+        for (int j = 0; j < NUM_ESTADOS; j++) {
+            agent->Q[i][j] = 0.0f;  // Inicializa la matriz Q con ceros
+            agent->R[i][j] = 0.0f;  // Inicializa la matriz R con ceros
+        }
+    }
+    agent->epsilon = 0.9; // exploración (exploración vs explotación)
+    agent->alpha = 0.5; // tasa de aprendizaje (recompensa inmediata)
+    agent->gamma = 0.7; // factor de descuento (valor medio-alto prioriza el largo plazo)
+}
+
+/***********************************************************/
+
+// Función para seleccionar la acción usando la política epsilon-greedy, considerando solo acciones válidas
+int q_agent_select_action(Q_Agent *agent, int estado) {
+    // Obtener las posiciones actuales de los servos
+    int servo1_pos = estado / 3 * 45;  // Dividiendo el estado para obtener la posición de servo 1
+    int servo2_pos = (estado % 3) * 45;  // Calculando la posición de servo 2
+    int num_valid_actions;
+
+    // Obtener las acciones válidas
+    int* valid_actions = get_valid_actions(servo1_pos, servo2_pos, &num_valid_actions);
+
+    if ((float)rand() / RAND_MAX < agent->epsilon) {
+        // Exploración: Seleccionar una acción aleatoria entre las acciones válidas
+        return valid_actions[rand() % num_valid_actions];
+    } else {
+        // Explotación: Seleccionar la mejor acción (basado en la Q-matriz para las acciones válidas)
+        float max_q = -1e6; // Valor mínimo
+        int best_action = valid_actions[0];
+        for (int i = 0; i < num_valid_actions; i++) {
+            int action = valid_actions[i];
+            if (agent->Q[estado][action] > max_q) {
+                max_q = agent->Q[estado][action];
+                best_action = action;
+            }
+        }
+        return best_action;  // Devolver la acción con el mayor valor Q
+    }
+}
+
+/***********************************************************/
+
+// Función para obtener el siguiente estado basado en la acción
+int obtener_siguiente_estado(int current_state, int action) {
+    int servo1_pos = (current_state / 3) * 45;  // Decodificar servo1 desde el estado
+    int servo2_pos = (current_state % 3) * 45;  // Decodificar servo2 desde el estado
+
+    // Aplicar la acción al servo correspondiente
+    if (action == 0) {  // Servo 1 hacia adelante
+        servo1_pos += 45;
+        if (servo1_pos > MAX_POSITION) servo1_pos = MAX_POSITION;
+    } else if (action == 1) {  // Servo 1 hacia atrás
+        servo1_pos -= 45;
+        if (servo1_pos < MIN_POSITION) servo1_pos = MIN_POSITION;
+    } else if (action == 2) {  // Servo 2 hacia adelante
+        servo2_pos += 45;
+        if (servo2_pos > MAX_POSITION) servo2_pos = MAX_POSITION;
+    } else if (action == 3) {  // Servo 2 hacia atrás
+        servo2_pos -= 45;
+        if (servo2_pos < MIN_POSITION) servo2_pos = MIN_POSITION;
+    }
+
+    // Convertir las nuevas posiciones a un estado
+    return (servo1_pos / 45) * 3 + (servo2_pos / 45);
+}
+
+/***********************************************************/
+
+// Función para verificar si la acción es válida
+bool accion_valida(int current_state, int action) {
+    int servo1_pos = (current_state / 3) * 45;
+    int servo2_pos = (current_state % 3) * 45;
+
+    // Validar la acción para el servo 1
+    if ((action == 0 && servo1_pos == MAX_POSITION) || (action == 1 && servo1_pos == MIN_POSITION)) {
+        return false;  // Si se intenta mover el servo fuera de límites
+    }
+
+    // Validar la acción para el servo 2
+    if ((action == 2 && servo2_pos == MAX_POSITION) || (action == 3 && servo2_pos == MIN_POSITION)) {
+        return false;  // Si se intenta mover el servo fuera de límites
+    }
+
+    return true;  // Acción válida
+}
+
+/***********************************************************/
+
+// Función para actualizar la matriz Q con la recompensa obtenida, esta funcion solo debería fijarse en los estados posibles, ya que los demás deberían tener siempre 0
+void q_agent_update(Q_Agent *agent, int estado, int accion, int siguiente_estado) {
+    float old_q = agent->Q[estado][siguiente_estado];
+    float max_q_next = agent->Q[siguiente_estado][0];
+
+    for (int a = 1; a < NUM_ESTADOS; a++) {
+        if (agent->Q[siguiente_estado][a] > max_q_next) {
+            max_q_next = agent->Q[siguiente_estado][a];
+        }
+    }
+    // Usar la recompensa desde la matriz R
+    float reward = agent->R[estado][siguiente_estado];
+    // Actualizar la tabla Q
+    agent->Q[estado][siguiente_estado] = old_q + agent->alpha * (reward + agent->gamma * max_q_next - old_q);
+
+    print_r_matrix(agent);
+
+}
+
+/***********************************************************/
+
+// Función para imprimir la matriz Q
+void print_q_matrix(Q_Agent *agent) {
+    printf("Q Matrix \n");
+    printf("R matrix \n");
+    for (int r = 0; r < ROW_NUM; r++) {
+        for (int c = 0; c < COL_NUM; c++) {
+            printf("%.2f ", agent->Q[r][c]);
+        }
+        printf("\n");
+    }
+}
+
+void print_r_matrix(Q_Agent *agent) {
+    printf("\n");
+    printf("R matrix \n");
+    for (int r = 0; r < ROW_NUM; r++) {
+        for (int c = 0; c < COL_NUM; c++) {
+            printf("%.2f ", agent->R[r][c]);
+        }
+        printf("\n");
+    }
+}
+
+/***********************************************************/
+
+// Función para mover los servos según el estado
+void simu_mover_servos(int estado, int accion)
+{
+    int servo1_pos = estado / 3 * 45;  // Dividiendo el estado para obtener la posición de servo 1
+    int servo2_pos = (estado % 3) * 45;  // Calculando la posición de servo 2
+
+    // // Ejecutar la acción correspondiente
+    // switch (accion) {
+    //     case ACTION_SERVO1_FORWARD:
+    //         servo1_pos += 45; // Mover servo 1 hacia arriba
+    //         break;
+    //     case ACTION_SERVO1_BACKWARD:
+    //         servo1_pos -= 45; // Mover servo 1 hacia abajo
+    //         break;
+    //     case ACTION_SERVO2_FORWARD:
+    //         servo2_pos += 45; // Mover servo 2 hacia arriba
+    //         break;
+    //     case ACTION_SERVO2_BACKWARD:
+    //         servo2_pos -= 45; // Mover servo 2 hacia abajo
+    //         break;
+    // }
+
+    // // Limitar las posiciones de los servos a entre 0 y 90 grados
+    // //ya está implmentado en el get_valid_actions, pero le da una capa de prevencion
+    // if (servo1_pos > 90) servo1_pos = 90;
+    // if (servo1_pos < 0) servo1_pos = 0;
+    // if (servo2_pos > 90) servo2_pos = 90;
+    // if (servo2_pos < 0) servo2_pos = 0;
+    // process_move_shoulder(servo1_pos);
+    // process_move_elbow(servo2_pos);
+
+    // Imprimir las nuevas posiciones de los servos
+    printf("Moviendo servo 1 a %d grados, servo 2 a %d grados\n", servo1_pos, servo2_pos);
+}
+
+/***********************************************************/
+
+// Función para mover los servos según el estado
+void mover_servos(int estado) {
+    // int servo1_pos = 0;
+    // int servo2_pos = 0;
+    // switch (estado) {
+    //     case 0: servo1_pos = 0; servo2_pos = 0; break;
+    //     case 1: servo1_pos = 0; servo2_pos = 45; break;
+    //     case 2: servo1_pos = 0; servo2_pos = 90; break;
+    //     case 3: servo1_pos = 45; servo2_pos = 0; break;
+    //     case 4: servo1_pos = 45; servo2_pos = 45; break;
+    //     case 5: servo1_pos = 45; servo2_pos = 90; break;
+    //     case 6: servo1_pos = 90; servo2_pos = 0; break;
+    //     case 7: servo1_pos = 90; servo2_pos = 45; break;
+    //     case 8: servo1_pos = 90; servo2_pos = 90; break;
+    // }
+
+    int servo1_pos = estado / 3 * 45;  // Dividiendo el estado para obtener la posición de servo 1
+    int servo2_pos = (estado % 3) * 45;  // Calculando la posición de servo 2
+    process_move_shoulder(servo1_pos);
+    process_move_elbow(servo2_pos);
+
+    // Aquí deberías poner el código que mueve físicamente los servos
+    // usando los ángulos decodificados (servo1_pos, servo2_pos)
+    printf("Moviendo servo 1 a %d y servo 2 a %d\n", servo1_pos, servo2_pos);
+}
+
+/***********************************************************/
+
+// Función que calcula la recompenza en base a la lectura los encoders
+void encoder_signal(Q_Agent *agent, int state, int next_state, encoder_t *encoder1, encoder_t *encoder2) {
+    // Leer el valor de recompensa desde los encoders
+    float reward = get_reward(encoder1,encoder2);
+    // Actualizar la matriz R con la recompensa obtenida
+    agent->R[state][next_state] = reward;
+
+    printf("Actualizada recompensa en R[%d][%d]: %.2f\n", state, next_state, reward);
+}
+
+/***********************************************************/
+
+// Función para simular la señal del encoder
+void simu_encoder_signal(Q_Agent *agent, int state, int next_state) {
+    //simula un reward random como si leyera el encoder
+    // Actualizar la matriz R con la recompensa obtenida
+    // srand(time(NULL)); // Inicializa la semilla
+    // Genera un número aleatorio entre 0 y 1
+    float random = (float)rand() / RAND_MAX;
+    agent->R[state][next_state] = random;
+
+    printf("Actualizada recompensa en R[%d][%d]: %.2f\n",state, next_state, random);
+}
+
+/***********************************************************/
+
+// Función para mover los servos continuamente
+void mover_servos_continuamente(int servo1_initial_position, int servo2_initial_position) {
+
+    int intentos = 0;//variable para contar los intentos de ejecución de lo aprendido
+    int best_state = 0;
+    float max_q_value = 0;
+
+    if(learn == FRONT_LEARN){
+        // Encontrar el estado con el mayor valor en la matriz Q
+        max_q_value = -1e6; // Inicializar con un valor muy bajo para encontrar el máximo
+
+        for (int r = 0; r < ROW_NUM; r++) {
+            for (int c = 0; c < COL_NUM; c++) {
+                if (agent.Q[r][c] > max_q_value) {
+                    max_q_value = agent.Q[r][c];
+                    best_state = c; // Guardar la columna (estado destino) con el mayor valor
+                }
+            }
+        }
+    }
+    else if(learn == BACK_LEARN){
+        // Encontrar el estado con el menor valor en la matriz Q
+        max_q_value = 1e6; // Inicializar con un valor muy alto para encontrar el minimo
+
+        for(int r = 0; r < ROW_NUM; r++) {
+            for (int c = 0; c < COL_NUM; c++) {
+                if (agent.Q[r][c] < max_q_value) {
+                    max_q_value = agent.Q[r][c];
+                    best_state = r; // Guardar la fila (estado anterior a destino) con el menor valor
+                }
+            }
+        }
+    }
+
+    // Decodificar el estado -> pos de servos
+    //esto podría implementarse como una función
+    int servo1_best_position = (best_state / 3) * 45; // Fila del estado mejor
+    int servo2_best_position = (best_state % 3) * 45; // Columna del estado mejor
+
+    printf("Mejor estado encontrado: %d con Q-value: %.2f\n", best_state, max_q_value);
+    // printf("Moviendo continuamente entre posición inicial Servo 1: %d, Servo 2: %d y mejor posición Servo 1: %d, Servo 2: %d\n",
+    //        servo1_initial_position, servo2_initial_position,
+    //        servo1_best_position, servo2_best_position);
+
+    while(intentos<MAX_INTENTOS){
+        // inicia en pos inicial
+        printf("Iniciando en posición inicial...\n");
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        process_move_elbow(45);//lo mismo de arriba
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        process_move_elbow(servo2_initial_position);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        process_move_shoulder(45);//para que el movimiento no sea de golpe (ya que no se lleva registro de donde esta el brazo en ese momento)
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        process_move_shoulder(servo1_initial_position);
+        estadoCrawler=obtenerEstadoCrawler();
+
+        while(estadoCrawler!=(1)){
+            estadoCrawler=obtenerEstadoCrawler();
+            learn=obtenerDireccionCrawler();
+            printf("Esperando a que se presione el botón START en el servidor para comenzar a aprender...\n");
+            vTaskDelay(pdMS_TO_TICKS(1000));
+        }
+
+        estadoAprendiendoEjecutando=1;
+        enviarEstadoCrawler();
+        if(learn==FRONT_LEARN){
+            while (estadoCrawler==1) {
+                // Movimiento de inicial a mejor posición
+                printf("Moviendo hacia la mejor posición...\n");
+                while (servo1_initial_position != servo1_best_position) {
+                    if (servo1_initial_position < servo1_best_position) {
+                        servo1_initial_position += 45; // Incrementar hacia la mejor posición
+                        process_move_shoulder(servo1_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    } else if (servo1_initial_position > servo1_best_position) {
+                        servo1_initial_position -= 45; // Decrementar hacia la mejor posición
+                        process_move_shoulder(servo1_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    }
+                }
+                while(servo2_initial_position != servo2_best_position){
+                    if (servo2_initial_position < servo2_best_position) {
+                        servo2_initial_position += 45; // Incrementar hacia la mejor posición
+                        process_move_elbow(servo2_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    } else if (servo2_initial_position > servo2_best_position) {
+                        servo2_initial_position -= 45; // Decrementar hacia la mejor posición
+                        process_move_elbow(servo2_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    }
+                }
+                
+                vTaskDelay(pdMS_TO_TICKS(2000));
+                if(estadoCrawler!=1) break;
+                printf("Moviendo de regreso a la posición inicial...\n");
+                while (servo1_initial_position != 45) {
+                    if (servo1_initial_position > 45) {
+                        servo1_initial_position -= 45; // Decrementar hacia la posición inicial
+                        process_move_shoulder(servo1_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    } 
+                    else if (servo1_initial_position < 45) {
+                        servo1_initial_position += 45; // Incrementar hacia la posición inicial
+                        process_move_shoulder(servo1_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    }
+                }
+                while(servo2_initial_position != 0){
+                    if (servo2_initial_position > 0) {
+                        servo2_initial_position -= 45; // Decrementar hacia la posición inicial
+                        process_move_elbow(servo2_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    } 
+                    else if (servo2_initial_position < 0) {
+                        servo2_initial_position += 45; // Incrementar hacia la posición inicial
+                        process_move_elbow(servo2_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    }
+                }
+            estadoCrawler=obtenerEstadoCrawler();
+            enviarEstadoCrawler();
+            }
+        }
+        else if(learn==BACK_LEARN){
+            while (estadoCrawler==1) {
+                // Movimiento de inicial a mejor posición
+                printf("Moviendo hacia la mejor posición...\n");
+                while (servo2_initial_position != servo2_best_position) {
+                    if (servo2_initial_position < servo2_best_position) {
+                        servo2_initial_position += 45; // Incrementar hacia la mejor posición
+                        process_move_elbow(servo2_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    } else if (servo2_initial_position > servo2_best_position) {
+                        servo2_initial_position -= 45; // Decrementar hacia la mejor posición
+                        process_move_elbow(servo2_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    }
+                }
+                while(servo1_initial_position != servo1_best_position){
+                    if (servo1_initial_position < servo1_best_position) {
+                        servo1_initial_position += 45; // Incrementar hacia la mejor posición
+                        process_move_shoulder(servo1_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    } else if (servo1_initial_position > servo1_best_position) {
+                        servo1_initial_position -= 45; // Decrementar hacia la mejor posición
+                        process_move_shoulder(servo1_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    }
+                }
+                
+                vTaskDelay(pdMS_TO_TICKS(2000));
+                if(estadoCrawler!=1) break;
+                printf("Moviendo de regreso a la posición inicial...\n");
+                while (servo1_initial_position != 90) {
+                    if (servo1_initial_position > 90) {
+                        servo1_initial_position -= 45; // Decrementar hacia la posición inicial
+                        process_move_shoulder(servo1_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    } 
+                    else if (servo1_initial_position < 90) {
+                        servo1_initial_position += 45; // Incrementar hacia la posición inicial
+                        process_move_shoulder(servo1_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    }
+                }
+                while (servo2_initial_position != 90) {
+                    if (servo2_initial_position > 90) {
+                        servo2_initial_position -= 45; // Decrementar hacia la posición inicial
+                        process_move_elbow(servo2_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    } 
+                    else if (servo2_initial_position < 90) {
+                        servo2_initial_position += 45; // Incrementar hacia la posición inicial
+                        process_move_elbow(servo2_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    }
+                }
+                if(estadoCrawler!=1) break;
+                while(servo1_initial_position != 0){
+                    if (servo1_initial_position > 0) {
+                        servo1_initial_position -= 45; // Decrementar hacia la posición inicial
+                        process_move_shoulder(servo1_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    } 
+                    else if (servo1_initial_position < 0) {
+                        servo1_initial_position += 45; // Incrementar hacia la posición inicial
+                        process_move_shoulder(servo1_initial_position);
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                    }
+                }
+            estadoCrawler=obtenerEstadoCrawler();
+            enviarEstadoCrawler();
+            }
+            // printf("Servo 1: %d Servo 2: %d\n", servo1_initial_position, servo2_initial_position);
+        vTaskDelay(pdMS_TO_TICKS(2000));
+        }
+
+        estadoAprendiendoEjecutando=-1;
+        enviarEstadoCrawler();
+
+        printf("Moviendo a la posición inicial...\n");
+        while (servo1_initial_position != 45) {
+            if (servo1_initial_position > 45) {
+                servo1_initial_position -= 45; // Decrementar hacia la posición inicial
+                process_move_shoulder(servo1_initial_position);
+                vTaskDelay(pdMS_TO_TICKS(1000));
+            } 
+            else if (servo1_initial_position < 45) {
+                servo1_initial_position += 45; // Incrementar hacia la posición inicial
+                process_move_shoulder(servo1_initial_position);
+                vTaskDelay(pdMS_TO_TICKS(1000));
+            }
+        }
+        while (servo2_initial_position != 0) {
+            if (servo2_initial_position > 0) {
+                servo2_initial_position -= 45; // Decrementar hacia la posición inicial
+                process_move_elbow(servo2_initial_position);
+                vTaskDelay(pdMS_TO_TICKS(1000));
+            } 
+            else if (servo2_initial_position < 0) {
+                servo2_initial_position += 45; // Incrementar hacia la posición inicial
+                process_move_elbow(servo2_initial_position);
+                vTaskDelay(pdMS_TO_TICKS(1000));
+            }
+        }
+
+    intentos++;
+    }
+
+}
+
+/****************************************************************************************/
+/******* FIN DE DECLARACIÓN DE FUNCIONES PARA EL ALGORTIRMO DE APRENDIZAJE Q ************/
+/****************************************************************************************/
+
+
+
+
+/**************** INICIO APP_MAIN **************************/
+
+void app_main(void){
 
     // Inicialización de hardware (Wi-Fi, encoders, etc.)
     init_servo();
@@ -409,18 +831,7 @@ void app_main(){
     q_agent_init(&agent);
 
     srand(time(NULL)); // Inicializa la semilla
-    // Crear tareas en los dos núcleos:
-
-    // Tarea para comunicación HTTP y Wi-Fi (Núcleo 0)
-    // xTaskCreate(
-    //     tarea_q_learning,            // Función de la tarea
-    //     "Tarea_Q_Learning",          // Nombre de la tarea
-    //     4096,                       // Tamaño del stack
-    //     NULL,                       // Parámetro de entrada
-    //     2,                          // Prioridad
-    //     NULL                      // Handle de la tarea
-    //                                 // Núcleo al que se asigna (Core 0)
-    // );
+    
     
     //--------------------------------------------Q-LEARNING----------------------------------
     while(1){
@@ -526,612 +937,3 @@ void app_main(){
         }
     }
 }
-//-----------------------FIN Q-LEARNING--------------------
-
-
-    // // Tarea para el aprendizaje Q-Learning (Núcleo 1)
-    // xTaskCreatePinnedToCore(
-    //     tarea_q_learning,           // Función de la tarea
-    //     "Tarea_Q_Learning",         // Nombre de la tarea
-    //     4096,                       // Tamaño del stack
-    //     NULL,                       // Parámetro de entrada
-    //     2,                          // Prioridad
-    //     NULL,                       // Handle de la tarea
-    //     1                            // Núcleo al que se asigna (Core 1)
-    // );
-
-
-// void tarea_q_learning(void *param) {
-//     int current_state = 0;  // Estado inicial
-//     int next_state = 0;
-//     int action = 0;
-//     int cont = 0;
-//     q_agent_init(&agent);
-
-//     while (cont < 100) {
-//         // Seleccionar acción, ejecutar, actualizar y simular movimiento
-//         action = q_agent_select_action(&agent, current_state);
-//         next_state = obtener_siguiente_estado(current_state, action);
-//         simu_mover_servos(next_state, action);
-//         simu_encoder_signal(&agent, current_state, next_state);
-//         q_agent_update(&agent, current_state, action, next_state);
-//         current_state = next_state;
-
-//         // Mostrar y enviar datos de la matriz Q
-//         if (cont % 10 == 0) {
-//             enviarDatosMatriz(agent.Q);
-//         }
-
-//         cont++;
-//         vTaskDelay(pdMS_TO_TICKS(1000));  // Controlar la frecuencia de aprendizaje
-//     }
-//     printf("Proceso de aprendizaje completado.\n");
-// }
-
-
-//----------------------------FUNCIONES--------------------------------------------------
-
-// Función para transformar el par de ángulos en un estado
-int get_estado(int servo1_pos, int servo2_pos) {
-    int estado = 0;
-    if (servo1_pos == 45) estado += 3;
-    if (servo1_pos == 90) estado += 6;
-    if (servo2_pos == 45) estado += 1;
-    if (servo2_pos == 90) estado += 2;
-    return estado;
-}
-
-// Función para obtener las acciones válidas basadas en las posiciones de los servos
-int* get_valid_actions(int servo1_pos, int servo2_pos, int* size) {
-    static int valid_actions[4]; // Array estático para almacenar las acciones válidas
-    int action_count = 0;
-
-    // Verificar si se puede mover el servo 1 hacia arriba (sumar 45 grados)
-    if (servo1_pos + 45 <= MAX_POSITION) {
-        valid_actions[action_count++] = ACTION_SERVO1_FORWARD;
-    }
-
-    // Verificar si se puede mover el servo 1 hacia abajo (restar 45 grados)
-    if (servo1_pos - 45 >= MIN_POSITION) {
-        valid_actions[action_count++] = ACTION_SERVO1_BACKWARD;
-    }
-
-    // Verificar si se puede mover el servo 2 hacia arriba (sumar 45 grados)
-    if (servo2_pos + 45 <= MAX_POSITION) {
-        valid_actions[action_count++] = ACTION_SERVO2_FORWARD;
-    }
-
-    // Verificar si se puede mover el servo 2 hacia abajo (restar 45 grados)
-    if (servo2_pos - 45 >= MIN_POSITION) {
-        valid_actions[action_count++] = ACTION_SERVO2_BACKWARD;
-    }
-
-    *size = sizeof(valid_actions)/sizeof(valid_actions[0]);
-
-    return valid_actions;  // Devuelve las acciones válidas
-}
-
-
-// Función para inicializar las matrices Q y R
-void q_agent_init(Q_Agent *agent) {
-    for (int i = 0; i < NUM_ESTADOS; i++) {
-        for (int j = 0; j < NUM_ESTADOS; j++) {
-            agent->Q[i][j] = 0.0f;  // Inicializa la matriz Q con ceros
-            agent->R[i][j] = 0.0f;  // Inicializa la matriz R con ceros
-        }
-    }
-    agent->epsilon = 0.9; // exploración (exploración vs explotación)
-    agent->alpha = 0.5; // tasa de aprendizaje (recompensa inmediata)
-    agent->gamma = 0.7; // factor de descuento (valor medio-alto prioriza el largo plazo)
-}
-
-
-// Función para seleccionar la acción usando la política epsilon-greedy, considerando solo acciones válidas
-int q_agent_select_action(Q_Agent *agent, int estado) {
-    // Obtener las posiciones actuales de los servos
-    int servo1_pos = estado / 3 * 45;  // Dividiendo el estado para obtener la posición de servo 1
-    int servo2_pos = (estado % 3) * 45;  // Calculando la posición de servo 2
-    int num_valid_actions;
-
-    // Obtener las acciones válidas
-    int* valid_actions = get_valid_actions(servo1_pos, servo2_pos, &num_valid_actions);
-
-    if ((float)rand() / RAND_MAX < agent->epsilon) {
-        // Exploración: Seleccionar una acción aleatoria entre las acciones válidas
-        return valid_actions[rand() % num_valid_actions];
-    } else {
-        // Explotación: Seleccionar la mejor acción (basado en la Q-matriz para las acciones válidas)
-        float max_q = -1e6; // Valor mínimo
-        int best_action = valid_actions[0];
-        for (int i = 0; i < num_valid_actions; i++) {
-            int action = valid_actions[i];
-            if (agent->Q[estado][action] > max_q) {
-                max_q = agent->Q[estado][action];
-                best_action = action;
-            }
-        }
-        return best_action;  // Devolver la acción con el mayor valor Q
-    }
-}
-
-int obtener_siguiente_estado(int current_state, int action) {
-    int servo1_pos = (current_state / 3) * 45;  // Decodificar servo1 desde el estado
-    int servo2_pos = (current_state % 3) * 45;  // Decodificar servo2 desde el estado
-
-    // Aplicar la acción al servo correspondiente
-    if (action == 0) {  // Servo 1 hacia adelante
-        servo1_pos += 45;
-        if (servo1_pos > MAX_POSITION) servo1_pos = MAX_POSITION;
-    } else if (action == 1) {  // Servo 1 hacia atrás
-        servo1_pos -= 45;
-        if (servo1_pos < MIN_POSITION) servo1_pos = MIN_POSITION;
-    } else if (action == 2) {  // Servo 2 hacia adelante
-        servo2_pos += 45;
-        if (servo2_pos > MAX_POSITION) servo2_pos = MAX_POSITION;
-    } else if (action == 3) {  // Servo 2 hacia atrás
-        servo2_pos -= 45;
-        if (servo2_pos < MIN_POSITION) servo2_pos = MIN_POSITION;
-    }
-
-    // Convertir las nuevas posiciones a un estado
-    return (servo1_pos / 45) * 3 + (servo2_pos / 45);
-}
-
-
-bool accion_valida(int current_state, int action) {
-    int servo1_pos = (current_state / 3) * 45;
-    int servo2_pos = (current_state % 3) * 45;
-
-    // Validar la acción para el servo 1
-    if ((action == 0 && servo1_pos == MAX_POSITION) || (action == 1 && servo1_pos == MIN_POSITION)) {
-        return false;  // Si se intenta mover el servo fuera de límites
-    }
-
-    // Validar la acción para el servo 2
-    if ((action == 2 && servo2_pos == MAX_POSITION) || (action == 3 && servo2_pos == MIN_POSITION)) {
-        return false;  // Si se intenta mover el servo fuera de límites
-    }
-
-    return true;  // Acción válida
-}
-
-
-
-// Función para actualizar la matriz Q con la recompensa obtenida
-//esta funcion solo debería fijarse en los estados posibles, ya que los demás deberían tener siempre 0
-void q_agent_update(Q_Agent *agent, int estado, int accion, int siguiente_estado) {
-    float old_q = agent->Q[estado][siguiente_estado];
-    float max_q_next = agent->Q[siguiente_estado][0];
-
-    for (int a = 1; a < NUM_ESTADOS; a++) {
-        if (agent->Q[siguiente_estado][a] > max_q_next) {
-            max_q_next = agent->Q[siguiente_estado][a];
-        }
-    }
-    // Usar la recompensa desde la matriz R
-    float reward = agent->R[estado][siguiente_estado];
-    // Actualizar la tabla Q
-    agent->Q[estado][siguiente_estado] = old_q + agent->alpha * (reward + agent->gamma * max_q_next - old_q);
-
-    print_r_matrix(agent);
-
-}
-
-void print_q_matrix(Q_Agent *agent) {
-    printf("Q Matrix \n");
-    printf("R matrix \n");
-    for (int r = 0; r < ROW_NUM; r++) {
-        for (int c = 0; c < COL_NUM; c++) {
-            printf("%.2f ", agent->Q[r][c]);
-        }
-        printf("\n");
-    }
-}
-
-void print_r_matrix(Q_Agent *agent) {
-    printf("\n");
-    printf("R matrix \n");
-    for (int r = 0; r < ROW_NUM; r++) {
-        for (int c = 0; c < COL_NUM; c++) {
-            printf("%.2f ", agent->R[r][c]);
-        }
-        printf("\n");
-    }
-}
-
-// Función para mover los servos según el estado
-void simu_mover_servos(int estado, int accion)
-{
-    int servo1_pos = estado / 3 * 45;  // Dividiendo el estado para obtener la posición de servo 1
-    int servo2_pos = (estado % 3) * 45;  // Calculando la posición de servo 2
-
-    // // Ejecutar la acción correspondiente
-    // switch (accion) {
-    //     case ACTION_SERVO1_FORWARD:
-    //         servo1_pos += 45; // Mover servo 1 hacia arriba
-    //         break;
-    //     case ACTION_SERVO1_BACKWARD:
-    //         servo1_pos -= 45; // Mover servo 1 hacia abajo
-    //         break;
-    //     case ACTION_SERVO2_FORWARD:
-    //         servo2_pos += 45; // Mover servo 2 hacia arriba
-    //         break;
-    //     case ACTION_SERVO2_BACKWARD:
-    //         servo2_pos -= 45; // Mover servo 2 hacia abajo
-    //         break;
-    // }
-
-    // // Limitar las posiciones de los servos a entre 0 y 90 grados
-    // //ya está implmentado en el get_valid_actions, pero le da una capa de prevencion
-    // if (servo1_pos > 90) servo1_pos = 90;
-    // if (servo1_pos < 0) servo1_pos = 0;
-    // if (servo2_pos > 90) servo2_pos = 90;
-    // if (servo2_pos < 0) servo2_pos = 0;
-    // process_move_shoulder(servo1_pos);
-    // process_move_elbow(servo2_pos);
-
-    // Imprimir las nuevas posiciones de los servos
-    printf("Moviendo servo 1 a %d grados, servo 2 a %d grados\n", servo1_pos, servo2_pos);
-}
-
-//el estado debería llegar bien
-void mover_servos(int estado) {
-    // int servo1_pos = 0;
-    // int servo2_pos = 0;
-    // switch (estado) {
-    //     case 0: servo1_pos = 0; servo2_pos = 0; break;
-    //     case 1: servo1_pos = 0; servo2_pos = 45; break;
-    //     case 2: servo1_pos = 0; servo2_pos = 90; break;
-    //     case 3: servo1_pos = 45; servo2_pos = 0; break;
-    //     case 4: servo1_pos = 45; servo2_pos = 45; break;
-    //     case 5: servo1_pos = 45; servo2_pos = 90; break;
-    //     case 6: servo1_pos = 90; servo2_pos = 0; break;
-    //     case 7: servo1_pos = 90; servo2_pos = 45; break;
-    //     case 8: servo1_pos = 90; servo2_pos = 90; break;
-    // }
-
-    int servo1_pos = estado / 3 * 45;  // Dividiendo el estado para obtener la posición de servo 1
-    int servo2_pos = (estado % 3) * 45;  // Calculando la posición de servo 2
-    process_move_shoulder(servo1_pos);
-    process_move_elbow(servo2_pos);
-
-    // Aquí deberías poner el código que mueve físicamente los servos
-    // usando los ángulos decodificados (servo1_pos, servo2_pos)
-    printf("Moviendo servo 1 a %d y servo 2 a %d\n", servo1_pos, servo2_pos);
-}
-
-// Función para mover los servos según la acción
-/*void mover_servos(int estado, int accion) {
-    int servo1_pos = estado / 3 * 45;  // Dividiendo el estado para obtener la posición de servo 1
-    int servo2_pos = (estado % 3) * 45;  // Calculando la posición de servo 2
-
-    // Ejecutar la acción correspondiente
-    switch (accion) {
-        case ACTION_SERVO1_FORWARD:
-            servo1_pos += 45; // Mover servo 1 hacia arriba
-            break;
-        case ACTION_SERVO1_BACKWARD:
-            servo1_pos -= 45; // Mover servo 1 hacia abajo
-            break;
-        case ACTION_SERVO2_FORWARD:
-            servo2_pos += 45; // Mover servo 2 hacia arriba
-            break;
-        case ACTION_SERVO2_BACKWARD:
-            servo2_pos -= 45; // Mover servo 2 hacia abajo
-            break;
-    }
-
-    // Limitar las posiciones de los servos a entre 0 y 90 grados
-    //ya está implmentado en el get_valid_actions, pero le da una capa de prevencion
-    if (servo1_pos > 90) servo1_pos = 90;
-    if (servo1_pos < 0) servo1_pos = 0;
-    if (servo2_pos > 90) servo2_pos = 90;
-    if (servo2_pos < 0) servo2_pos = 0;
-
-    // Mover los servos físicamente a las nuevas posiciones
-    process_move_shoulder(servo1_pos);
-    process_move_elbow(servo2_pos);
-
-    // Imprimir las nuevas posiciones de los servos
-    printf("Moviendo servo 1 a %d grados, servo 2 a %d grados\n", servo1_pos, servo2_pos);
-}*/
-
-
-
-void encoder_signal(Q_Agent *agent, int state, int next_state, encoder_t *encoder1, encoder_t *encoder2) {
-    // Leer el valor de recompensa desde los encoders
-    float reward = get_reward(encoder1,encoder2);
-    // Actualizar la matriz R con la recompensa obtenida
-    agent->R[state][next_state] = reward;
-
-    printf("Actualizada recompensa en R[%d][%d]: %.2f\n", state, next_state, reward);
-}
-
-void simu_encoder_signal(Q_Agent *agent, int state, int next_state) {
-    //simula un reward random como si leyera el encoder
-    // Actualizar la matriz R con la recompensa obtenida
-    // srand(time(NULL)); // Inicializa la semilla
-    // Genera un número aleatorio entre 0 y 1
-    float random = (float)rand() / RAND_MAX;
-    agent->R[state][next_state] = random;
-
-    printf("Actualizada recompensa en R[%d][%d]: %.2f\n",state, next_state, random);
-}
-
-
-// void mover_servos_continuamente(int servo1_initial_position, int servo2_initial_position) {
-//     //aca iria el boton de start stop-----
-//     while (1) {
-//         printf("Movimiento continuo: Servo 1 a %d, Servo 2 a %d\n", servo1_initial_position, servo2_initial_position);
-//         printf("Servo 1 a %d, Servo 2 a %d\n", servo1_initial_position, servo2_initial_position);
-//         vTaskDelay(pdMS_TO_TICKS(1000));
-//     }
-// }
-
-void mover_servos_continuamente(int servo1_initial_position, int servo2_initial_position) {
-
-    int intentos = 0;//variable para contar los intentos de ejecución de lo aprendido
-    int best_state = 0;
-    float max_q_value = 0;
-
-    if(learn == FRONT_LEARN){
-        // Encontrar el estado con el mayor valor en la matriz Q
-        max_q_value = -1e6; // Inicializar con un valor muy bajo para encontrar el máximo
-
-        for (int r = 0; r < ROW_NUM; r++) {
-            for (int c = 0; c < COL_NUM; c++) {
-                if (agent.Q[r][c] > max_q_value) {
-                    max_q_value = agent.Q[r][c];
-                    best_state = c; // Guardar la columna (estado destino) con el mayor valor
-                }
-            }
-        }
-    }
-    else if(learn == BACK_LEARN){
-        // Encontrar el estado con el menor valor en la matriz Q
-        max_q_value = 1e6; // Inicializar con un valor muy alto para encontrar el minimo
-
-        for(int r = 0; r < ROW_NUM; r++) {
-            for (int c = 0; c < COL_NUM; c++) {
-                if (agent.Q[r][c] < max_q_value) {
-                    max_q_value = agent.Q[r][c];
-                    best_state = r; // Guardar la fila (estado anterior a destino) con el menor valor
-                }
-            }
-        }
-    }
-
-    // Decodificar el estado -> pos de servos
-    //esto podría implementarse como una función
-    int servo1_best_position = (best_state / 3) * 45; // Fila del estado mejor
-    int servo2_best_position = (best_state % 3) * 45; // Columna del estado mejor
-
-    printf("Mejor estado encontrado: %d con Q-value: %.2f\n", best_state, max_q_value);
-    // printf("Moviendo continuamente entre posición inicial Servo 1: %d, Servo 2: %d y mejor posición Servo 1: %d, Servo 2: %d\n",
-    //        servo1_initial_position, servo2_initial_position,
-    //        servo1_best_position, servo2_best_position);
-
-    while(intentos<MAX_INTENTOS){
-        // inicia en pos inicial
-        printf("Iniciando en posición inicial...\n");
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        process_move_elbow(45);//lo mismo de arriba
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        process_move_elbow(servo2_initial_position);
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        process_move_shoulder(45);//para que el movimiento no sea de golpe (ya que no se lleva registro de donde esta el brazo en ese momento)
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        process_move_shoulder(servo1_initial_position);
-        // while (servo1_initial_position != 45 || servo2_initial_position != 0) {
-        //     if (servo1_initial_position > 45) {
-        //         servo1_initial_position -= 45; // Decrementar hacia la posición inicial
-        //         process_move_shoulder(servo1_initial_position);
-        //         vTaskDelay(pdMS_TO_TICKS(1000));
-        //     } 
-        //     else if (servo1_initial_position < 45) {
-        //         servo1_initial_position += 45; // Incrementar hacia la posición inicial
-        //         process_move_shoulder(servo1_initial_position);
-        //         vTaskDelay(pdMS_TO_TICKS(1000));
-        //     }
-
-        //     if (servo2_initial_position > 0) {
-        //         servo2_initial_position -= 45; // Decrementar hacia la posición inicial
-        //         process_move_elbow(servo2_initial_position);
-        //         vTaskDelay(pdMS_TO_TICKS(1000));
-        //     } 
-        //     else if (servo2_initial_position < 0) {
-        //         servo2_initial_position += 45; // Incrementar hacia la posición inicial
-        //         process_move_elbow(servo2_initial_position);
-        //         vTaskDelay(pdMS_TO_TICKS(1000));
-        //     }
-        //     printf("Servo 1: %d Servo 2: %d\n", servo1_initial_position, servo2_initial_position);
-        //     vTaskDelay(pdMS_TO_TICKS(2000));
-        // }
-        estadoCrawler=obtenerEstadoCrawler();
-
-        while(estadoCrawler!=(1)){
-            estadoCrawler=obtenerEstadoCrawler();
-            learn=obtenerDireccionCrawler();
-            printf("Esperando a que se presione el botón START en el servidor para comenzar a aprender...\n");
-            vTaskDelay(pdMS_TO_TICKS(1000));
-        }
-
-        estadoAprendiendoEjecutando=1;
-        enviarEstadoCrawler();
-        if(learn==FRONT_LEARN){
-            while (estadoCrawler==1) {
-                // Movimiento de inicial a mejor posición
-                printf("Moviendo hacia la mejor posición...\n");
-                while (servo1_initial_position != servo1_best_position) {
-                    if (servo1_initial_position < servo1_best_position) {
-                        servo1_initial_position += 45; // Incrementar hacia la mejor posición
-                        process_move_shoulder(servo1_initial_position);
-                        vTaskDelay(pdMS_TO_TICKS(1000));
-                    } else if (servo1_initial_position > servo1_best_position) {
-                        servo1_initial_position -= 45; // Decrementar hacia la mejor posición
-                        process_move_shoulder(servo1_initial_position);
-                        vTaskDelay(pdMS_TO_TICKS(1000));
-                    }
-                }
-                while(servo2_initial_position != servo2_best_position){
-                    if (servo2_initial_position < servo2_best_position) {
-                        servo2_initial_position += 45; // Incrementar hacia la mejor posición
-                        process_move_elbow(servo2_initial_position);
-                        vTaskDelay(pdMS_TO_TICKS(1000));
-                    } else if (servo2_initial_position > servo2_best_position) {
-                        servo2_initial_position -= 45; // Decrementar hacia la mejor posición
-                        process_move_elbow(servo2_initial_position);
-                        vTaskDelay(pdMS_TO_TICKS(1000));
-                    }
-                }
-                // printf("Servo 1: %d Servo 2: %d\n", servo1_initial_position, servo2_initial_position);
-                // Simular tiempo de movimiento
-                vTaskDelay(pdMS_TO_TICKS(2000));
-                if(estadoCrawler!=1) break;
-                printf("Moviendo de regreso a la posición inicial...\n");
-                while (servo1_initial_position != 45) {
-                    if (servo1_initial_position > 45) {
-                        servo1_initial_position -= 45; // Decrementar hacia la posición inicial
-                        process_move_shoulder(servo1_initial_position);
-                        vTaskDelay(pdMS_TO_TICKS(1000));
-                    } 
-                    else if (servo1_initial_position < 45) {
-                        servo1_initial_position += 45; // Incrementar hacia la posición inicial
-                        process_move_shoulder(servo1_initial_position);
-                        vTaskDelay(pdMS_TO_TICKS(1000));
-                    }
-                }
-                while(servo2_initial_position != 0){
-                    if (servo2_initial_position > 0) {
-                        servo2_initial_position -= 45; // Decrementar hacia la posición inicial
-                        process_move_elbow(servo2_initial_position);
-                        vTaskDelay(pdMS_TO_TICKS(1000));
-                    } 
-                    else if (servo2_initial_position < 0) {
-                        servo2_initial_position += 45; // Incrementar hacia la posición inicial
-                        process_move_elbow(servo2_initial_position);
-                        vTaskDelay(pdMS_TO_TICKS(1000));
-                    }
-                }
-            estadoCrawler=obtenerEstadoCrawler();
-            enviarEstadoCrawler();
-            }
-        }
-        else if(learn==BACK_LEARN){
-            while (estadoCrawler==1) {
-                // Movimiento de inicial a mejor posición
-                printf("Moviendo hacia la mejor posición...\n");
-                while (servo2_initial_position != servo2_best_position) {
-                    if (servo2_initial_position < servo2_best_position) {
-                        servo2_initial_position += 45; // Incrementar hacia la mejor posición
-                        process_move_elbow(servo2_initial_position);
-                        vTaskDelay(pdMS_TO_TICKS(1000));
-                    } else if (servo2_initial_position > servo2_best_position) {
-                        servo2_initial_position -= 45; // Decrementar hacia la mejor posición
-                        process_move_elbow(servo2_initial_position);
-                        vTaskDelay(pdMS_TO_TICKS(1000));
-                    }
-                }
-                while(servo1_initial_position != servo1_best_position){
-                    if (servo1_initial_position < servo1_best_position) {
-                        servo1_initial_position += 45; // Incrementar hacia la mejor posición
-                        process_move_shoulder(servo1_initial_position);
-                        vTaskDelay(pdMS_TO_TICKS(1000));
-                    } else if (servo1_initial_position > servo1_best_position) {
-                        servo1_initial_position -= 45; // Decrementar hacia la mejor posición
-                        process_move_shoulder(servo1_initial_position);
-                        vTaskDelay(pdMS_TO_TICKS(1000));
-                    }
-                }
-                // printf("Servo 1: %d Servo 2: %d\n", servo1_initial_position, servo2_initial_position);
-                // Simular tiempo de movimiento
-                vTaskDelay(pdMS_TO_TICKS(2000));
-                if(estadoCrawler!=1) break;
-                printf("Moviendo de regreso a la posición inicial...\n");
-                while (servo1_initial_position != 90) {
-                    if (servo1_initial_position > 90) {
-                        servo1_initial_position -= 45; // Decrementar hacia la posición inicial
-                        process_move_shoulder(servo1_initial_position);
-                        vTaskDelay(pdMS_TO_TICKS(1000));
-                    } 
-                    else if (servo1_initial_position < 90) {
-                        servo1_initial_position += 45; // Incrementar hacia la posición inicial
-                        process_move_shoulder(servo1_initial_position);
-                        vTaskDelay(pdMS_TO_TICKS(1000));
-                    }
-                }
-                while (servo2_initial_position != 90) {
-                    if (servo2_initial_position > 90) {
-                        servo2_initial_position -= 45; // Decrementar hacia la posición inicial
-                        process_move_elbow(servo2_initial_position);
-                        vTaskDelay(pdMS_TO_TICKS(1000));
-                    } 
-                    else if (servo2_initial_position < 90) {
-                        servo2_initial_position += 45; // Incrementar hacia la posición inicial
-                        process_move_elbow(servo2_initial_position);
-                        vTaskDelay(pdMS_TO_TICKS(1000));
-                    }
-                }
-                if(estadoCrawler!=1) break;
-                while(servo1_initial_position != 0){
-                    if (servo1_initial_position > 0) {
-                        servo1_initial_position -= 45; // Decrementar hacia la posición inicial
-                        process_move_shoulder(servo1_initial_position);
-                        vTaskDelay(pdMS_TO_TICKS(1000));
-                    } 
-                    else if (servo1_initial_position < 0) {
-                        servo1_initial_position += 45; // Incrementar hacia la posición inicial
-                        process_move_shoulder(servo1_initial_position);
-                        vTaskDelay(pdMS_TO_TICKS(1000));
-                    }
-                }
-            estadoCrawler=obtenerEstadoCrawler();
-            enviarEstadoCrawler();
-            }
-            // printf("Servo 1: %d Servo 2: %d\n", servo1_initial_position, servo2_initial_position);
-        vTaskDelay(pdMS_TO_TICKS(2000));
-        }
-
-        estadoAprendiendoEjecutando=-1;
-        enviarEstadoCrawler();
-
-        printf("Moviendo a la posición inicial...\n");
-        while (servo1_initial_position != 45) {
-            if (servo1_initial_position > 45) {
-                servo1_initial_position -= 45; // Decrementar hacia la posición inicial
-                process_move_shoulder(servo1_initial_position);
-                vTaskDelay(pdMS_TO_TICKS(1000));
-            } 
-            else if (servo1_initial_position < 45) {
-                servo1_initial_position += 45; // Incrementar hacia la posición inicial
-                process_move_shoulder(servo1_initial_position);
-                vTaskDelay(pdMS_TO_TICKS(1000));
-            }
-        }
-        while (servo2_initial_position != 0) {
-            if (servo2_initial_position > 0) {
-                servo2_initial_position -= 45; // Decrementar hacia la posición inicial
-                process_move_elbow(servo2_initial_position);
-                vTaskDelay(pdMS_TO_TICKS(1000));
-            } 
-            else if (servo2_initial_position < 0) {
-                servo2_initial_position += 45; // Incrementar hacia la posición inicial
-                process_move_elbow(servo2_initial_position);
-                vTaskDelay(pdMS_TO_TICKS(1000));
-            }
-        }
-
-    intentos++;
-    }
-
-}
-
-// float dwalltime()
-// {
-//     double sec;
-//     struct timeval tv;
-//     gettimeofday(&tv, NULL);
-//     sec = tv.tv_sec + tv.tv_usec/1000000.0;
-//     return sec;
-// }
-
