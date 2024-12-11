@@ -12,9 +12,15 @@ from django.core.cache import cache
 start = False  # Inicialmente apagado
 aprendiendoEjecutando=0 #-1-Detenido, 0-Aprendiendo, 1-Ejecutando
 textoEstadoCrawler="Detenido" #Detenido, Aprendiendo, Ejecutando lo aprendido
+direccionCrawler=0 #Para adelante / 1 Para atras
+startBool=True
 
 
+##
+import random
 matriz = [[0 for _ in range(9)] for _ in range(9)]  # Matriz 9x9 llena de ceros
+cache.set('matriz_global', matriz)
+cache.set('direccion_crawler',direccionCrawler)
 
 def mostrar_matriz(request):
     matriz = cache.get('matriz_global', [[0 for _ in range(9)] for _ in range(9)])  # Por defecto, una matriz 9x9 de ceros
@@ -23,6 +29,11 @@ def mostrar_matriz(request):
         "matriz": matriz,
         "estado_crawler": estado_crawler
     })
+    
+def get_matriz(request):
+    ##matriz = cache.get('matriz_global', matriz)  # Supongamos que la matriz está almacenada en caché
+    matriz = cache.get('matriz_global', []) 
+    return JsonResponse({'matriz': matriz})
 
 def about(request):
     return HttpResponse("About")
@@ -38,6 +49,7 @@ def recibir_dato(request):
             if matriz and len(matriz) == 9 and all(len(row) == 9 for row in matriz):
                 # Guarda la matriz en la caché
                 cache.set('matriz_global', matriz, timeout=None)  # Sin límite de tiempo
+                print(matriz)
                 return JsonResponse({'status': 'success', 'mensaje': 'Matriz recibida y almacenada'}, status=200)
             else:
                 return JsonResponse({'status': 'error', 'mensaje': 'La matriz debe ser 9x9'}, status=400)
@@ -101,7 +113,32 @@ def recibir_estado(request):
             return JsonResponse({'status': 'error', 'mensaje': 'JSON inválido'}, status=400)
     else:
         return JsonResponse({'status': 'error', 'mensaje': 'Solo acepta POST requests'}, status=405)
+    
 
 def get_estado_crawler(request):
     estado_crawler = cache.get('estado_crawler', textoEstadoCrawler)
     return JsonResponse({"estado_crawler": estado_crawler})
+
+
+def get_direccion_crawler(request):
+    global startBool
+    direccionC=cache.get('direccion_crawler')
+    if (direccionC==0):
+        startBool=True
+    elif (direccionC==1):
+        startBool=False
+
+    return JsonResponse({'start2': direccionC,
+                         'start':startBool})
+
+@csrf_exempt
+def set_direccion_crawler(request):
+    global direccion_crawler
+    if request.method == 'POST':
+        print("Modificando direccion del crawler")
+        data = json.loads(request.body)
+        print("direccion ",data)
+        print(data.get('start2') )
+        cache.set('direccion_crawler',data.get('start2'))
+        return JsonResponse({'status': 'success', 'start': data.get('start2')})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
