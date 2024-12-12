@@ -7,8 +7,11 @@
 </div>
 
 <!-- Descripción del proyecto -->
-El Robot Crawler se trata de un robot de estilo autito, de ruedas no motorizadas que se desplaza en su entorno, utilizando entonces su brazo de 2 grados de libertad (hombro y codo, se mueven hacia abajo y hacia arriba). Lo interesante es la ejecución del algoritmo de machine learning Q-Learning, mediante el cual el robot adquiere inteligencia para aprender cuales son los movimientos óptimos del brazo que generan el desplazamiento deseado (hacia adelante o hacia atrás).
-Este proyecto tuvo como objetivo el desarrollo de uno de estos, utilizando un ESP32, servomotores SG90 y encoders HC-020K, y desarrollando también una interfaz web de control y visualización de la ejecución del algoritmo, asegurando que se cumplan los requerimientos para que todo funcione en tiempo real.
+El **Robot Crawler** se trata de un robot de estilo autito, de **ruedas no motorizadas** que se desplaza en su entorno, utilizando entonces su **brazo** de 2 grados de libertad (hombro y codo, se mueven hacia abajo y hacia arriba). 
+
+Lo interesante es la ejecución del algoritmo de machine learning **Q-Learning**, mediante el cual el robot adquiere **inteligencia para aprender** cuales son los movimientos óptimos del brazo que generan el **desplazamiento** deseado (hacia adelante o hacia atrás).
+
+Este proyecto tuvo como objetivo el desarrollo de uno de estos, utilizando un **ESP32**, servomotores **SG90** y encoders **HC-020K**, y desarrollando también una interfaz web de control y visualización de la ejecución del algoritmo, asegurando que se cumplan los requerimientos para que todo funcione en tiempo real.
 
 <details>
   <summary><i>🌠Características del proyecto</i></summary>
@@ -146,7 +149,7 @@ Este proyecto tuvo como objetivo el desarrollo de uno de estos, utilizando un ES
 
 
 <!-- video explicativo-->
-<h1 id="video">Video Explicativo de Funcionamiento</h1>
+<h1 id="video">🎥 Video Demostrativo </h1>
 <p>A continuación, se deja a disposición un enlace a un video muy bueno acerca de la utilización del robot y su muestra funcionamiento: <a href="https://drive.google.com/file/d/1lm1mgNGavn7JolaU8XNPaSUfvHQAbiKy/view?usp=drive_link">Video</a></p>
 
 <h1 id="bitacora">📖Bitácora</h1>
@@ -165,3 +168,12 @@ Este proyecto tuvo como objetivo el desarrollo de uno de estos, utilizando un ES
 <h1 id="coordinador">📌 Coordinador</h1>
 
 * **Alan Fabián Castelli** *Profesor - Ayudante* [![Repo](https://badgen.net/badge/icon/gmaron?icon=github&label)](https://github.com/aCastelli95)
+
+
+<!-- Licencia -->
+<h1 id="license">📄 Licencia</h1>
+<details>
+  <summary>Licencia</summary>
+  <p>Este proyecto está bajo la Licencia <b>GPL-3.0 license</b>.</p>
+  <p>Mira el archivo <code>LICENSE</code> para más detalles.</p>
+</details>
