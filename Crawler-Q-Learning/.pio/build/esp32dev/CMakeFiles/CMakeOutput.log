@@ -429,3 +429,16 @@ Run Build Command(s):/home/sebauer/.platformio/packages/tool-ninja/ninja cmTC_8c
 
 Source file was:
 int main(void) { return 0; }
+Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+Compiler: C:/Users/Zeke/.platformio/packages/toolchain-xtensa-esp-elf/bin/xtensa-esp32-elf-g++.exe 
+Build flags: -mlongcalls;-Wno-frame-address;;-fno-builtin-memcpy;-fno-builtin-memset;-fno-builtin-bzero;-fno-builtin-stpcpy;-fno-builtin-strncpy
+Id flags:  
+
+The output was:
+0
+
+
+Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
+
+The CXX compiler identification is GNU, found in "C:/Users/Zeke/GitRepos/2024-A4-QLEARNING-ESP32/Crawler-Q-Learning/.pio/build/esp32dev/CMakeFiles/3.16.4/CompilerIdCXX/a.out"
+
