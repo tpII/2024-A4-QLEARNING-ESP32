@@ -63,6 +63,7 @@ Este proyecto tuvo como objetivo el desarrollo de uno de estos, utilizando un **
     <li><a href="#installation-esp32">➤ Instalación y Configuración del ESP32</a></li>
     <li><a href="#installation-django-server">➤ Instalación y Configuración del Servidor Django</a></li>
     <li><a href="#execution-steps">➤ Pasos para la Ejecución del Proyecto</a></li>
+    <li><a href="#video">➤ Pasos para la Ejecución del Proyecto</a></li>
     <li><a href="#bitacora">➤ Bitácora</a></li>
     <li><a href="#authors">➤ Autores</a></li>
     <li><a href="#coordinador">➤ Coordinador</a></li>
