@@ -158,16 +158,16 @@ Este proyecto tuvo como objetivo el desarrollo de uno de estos, utilizando un **
 
 <h1 id="authors">✒️ Autores</h1>
 
-* **Ezequiel Benito Skliar** [![Repo](https://badgen.net/badge/icon/notBraii?icon=github&label)](https://github.com/Eskliar)
+* **Ezequiel Benito Skliar** [![Repo](https://badgen.net/badge/icon/Eskliar?icon=github&label)](https://github.com/Eskliar)
 
-* **Sebastián Sauer Rosas** [![Repo](https://badgen.net/badge/icon/Juanercoli?icon=github&label)](https://github.com/sauersebastian)
+* **Sebastián Sauer Rosas** [![Repo](https://badgen.net/badge/icon/sauersebastian?icon=github&label)](https://github.com/sauersebastian)
   
-*  **Luciano Nicolás Loyola** [![Repo](https://badgen.net/badge/icon/momus53?icon=github&label)](https://github.com/LucianoLoyola)
+*  **Luciano Nicolás Loyola** [![Repo](https://badgen.net/badge/icon/LucianoLoyola?icon=github&label)](https://github.com/LucianoLoyola)
 
 
 <h1 id="coordinador">📌 Coordinador</h1>
 
-* **Alan Fabián Castelli** *Profesor - Ayudante* [![Repo](https://badgen.net/badge/icon/gmaron?icon=github&label)](https://github.com/aCastelli95)
+* **Alan Fabián Castelli** *Profesor - Ayudante* [![Repo](https://badgen.net/badge/icon/aCastelli95?icon=github&label)](https://github.com/aCastelli95)
 
 
 <!-- Licencia -->
